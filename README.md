@@ -59,24 +59,24 @@
 
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Searches listings for items that match a particular description, can also optionally include a price as well as a price ceiling.
+- **Inputs:** description: str, size: str, max price: float
+- **Returns:** returns a dynamic array of hashmaps (list of dicts)
+- **When it has nothing:** Currently returns an empty list regardless of inputs, *should* return an empty list with missing inputs.
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Suggests an outfit to the user based on their wardrobe and collection of thrifted items.
+- **Inputs:** new_item: dict, wardrobe:dict
+- **Returns:** returns a string
+- **When it has nothing:** Empty inputs should return a generic styling guide as opposed to an empty string.
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Calls the model to write a caption that someone would post about the fit found
+- **Inputs:** outfit:str, new_item:dict
+- **Returns:** returns a string
+- **When it has nothing:** Returns a descriptive message about lacking inputs rather than raising an error.
 
 ---
 
@@ -93,7 +93,7 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If !search_listings then notify user about empty listings list->else suggest_outfit based on random result from listings. 
 
 **Where it lives:** `agent.py::run_agent`
 
