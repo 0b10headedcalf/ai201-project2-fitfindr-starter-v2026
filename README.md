@@ -41,6 +41,10 @@
 
 <!-- Three or four sentences: what a user asks for, and what they get back. -->
 
+FitFindr helps a user find thrift listings that fit their parameters. A user can ask for something such as "vintage graphic tee under $30,"
+and the app searches the local listings dataset for relevant options. When it
+finds one, it suggests an outfit using the user's saved wardrobe and writes a
+short fit-card caption for the find.
 
 
 ---
@@ -59,24 +63,24 @@
 
 ### `search_listings`
 
-- **What it does:** Searches listings for items that match a particular description, can also optionally include a price as well as a price ceiling.
-- **Inputs:** description: str, size: str, max price: float
-- **Returns:** returns a dynamic array of hashmaps (list of dicts)
-- **When it has nothing:** Currently returns an empty list regardless of inputs, *should* return an empty list with missing inputs.
+- **What it does:** Searches the thrift-listing dataset by keyword, with optional exact size-token matching and an inclusive maximum price. Results with more matching keywords appear first.
+- **Inputs:** `description: str`, `size: str | None`, `max_price: float | None`.
+- **Returns:** A list of up to `SEARCH_RESULT_LIMIT` matching listing dictionaries, each containing item details such as title, price, size, tags, and platform.
+- **When it has nothing:** Returns `[]` when no listing has a matching keyword or meets the supplied filters.
 
 ### `suggest_outfit`
 
-- **What it does:** Suggests an outfit to the user based on their wardrobe and collection of thrifted items.
-- **Inputs:** new_item: dict, wardrobe:dict
-- **Returns:** returns a string
-- **When it has nothing:** Empty inputs should return a generic styling guide as opposed to an empty string.
+- **What it does:** Uses the model to suggest one or two outfits around a selected thrift listing, naming compatible items from the user's wardrobe when available.
+- **Inputs:** `new_item: dict`, `wardrobe: dict` with an `items` list.
+- **Returns:** A non-empty styling suggestion string.
+- **When it has nothing:** With an empty wardrobe, returns general styling ideas without claiming that the user owns specific pieces.
 
 ### `create_fit_card`
 
-- **What it does:** Calls the model to write a caption that someone would post about the fit found
-- **Inputs:** outfit:str, new_item:dict
-- **Returns:** returns a string
-- **When it has nothing:** Returns a descriptive message about lacking inputs rather than raising an error.
+- **What it does:** Uses the model to turn an outfit suggestion and thrift listing into a short, social-media-style fit-card caption.
+- **Inputs:** `outfit: str`, `new_item: dict`.
+- **Returns:** A two-to-four sentence caption that mentions the listing's price and platform once each.
+- **When it has nothing:** If the outfit is empty or only whitespace, returns a message explaining that an outfit suggestion is needed.
 
 ---
 
@@ -93,13 +97,22 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:** If !search_listings then notify user about empty listings list->else suggest_outfit based on random result from listings. 
+**Branch rule:** If `search_listings` returns an empty list, store a helpful
+message in `session["error"]` and stop. Otherwise, select the first matching
+listing, call `suggest_outfit`, then call `create_fit_card` with that outfit
+and listing.
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** String splitting. `run_agent` removes a `size`
+value and an `under $` price value from the search description before passing
+the remaining words to `search_listings`.
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** The parsed description, size, and price
+ceiling go into `session["parsed"]`; search results go into
+`session["search_results"]`; the first result becomes `session["selected_item"]`;
+then the outfit and caption go into `session["outfit_suggestion"]` and
+`session["fit_card"]`.
 
 ---
 
@@ -113,25 +126,38 @@
 **One full query**
 
 ```
-$ python app.py ask '...'
+$ python app.py ask 'vintage graphic tee under $30'
 
+  Found:    Y2K Baby Tee — Butterfly Print — $18.0 on depop
+
+  Outfit:   Here is a fun, Y2K-inspired outfit using your thrift find!
+
+  Streetwear Contrast: Pair the butterfly baby tee with baggy straight-leg jeans, a black cropped zip hoodie, chunky white sneakers, and a black crossbody bag for an easy Y2K streetwear look.
+
+  Fit card: I couldn't resist grabbing this pastel butterfly baby tee when I spotted it on Depop for just $18.00! To lean into that ultimate early 2000s proportion play, I'm pairing it with baggy straight-leg jeans and throwing an unzipped black hoodie right over top. Finished off with chunky white sneakers, it's the easiest way to mix a sweet graphic print with some effortless streetwear edge.
+
+1 model call this session, 1 served from cache
 ```
 
 **The three tools, tested one at a time**
 
 ```
-$ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
-
+$ python -c "from tools import search_listings; print([(item['title'], item['price']) for item in search_listings('graphic tee', max_price=30)])"
+[('Y2K Baby Tee — Butterfly Print', 18.0), ('Graphic Tee — 2003 Tour Bootleg Style', 24.0), ('Mesh Long-Sleeve Top — Black', 15.0), ('Vintage Band Tee — Faded Grey', 19.0), ('Low-Rise Cargo Pants — Khaki', 27.0), ('Oversized Crewneck Sweatshirt — Vintage Navy', 20.0), ('Vintage Graphic Hoodie — Faded Black', 26.0)]
 ```
 
 ```
-$ python -c "from tools import suggest_outfit; ..."
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[1], get_example_wardrobe()))"
+Here is a fun, Y2K-inspired outfit using your thrift find!
 
+**Streetwear Contrast:** Pair the butterfly baby tee with your **baggy straight-leg jeans** for that classic early 2000s proportion play (fitted top, loose bottoms). Layer the **black cropped zip hoodie** over top, leaving it partially unzipped to show off the graphic. Finish with the **chunky white sneakers** and the **black crossbody bag** for an effortless, everyday look.
+
+**Why it works:** The fitted silhouette of the baby tee balances the volume of the baggy jeans, while the black hoodie and sneakers ground the cute, pastel butterfly print with an edgy streetwear vibe.
 ```
 
 ```
-$ python -c "from tools import create_fit_card; ..."
-
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('Pair it with baggy dark-wash jeans and clean white sneakers.', load_listings()[1]))"
+I couldn't resist grabbing this pink and purple butterfly baby tee when I spotted it on depop for just $18.00. It instantly took me right back to the early 2000s, but I love dressing it down with baggy dark-wash jeans and clean white sneakers for that perfect effortless mix of sweet and slouchy.
 ```
 
 ---
@@ -147,15 +173,15 @@ $ python -c "from tools import create_fit_card; ..."
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Sample prompts and inputs for the functions that required calling the model.
+- *What came back:* Well designed and structured prompts that produced better results than my original prompts.
+- *What I changed:* I did change some of the wording and code that it tried to implement.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Asked it to spruce up my regex usage
+- *What came back:* Well structured regex that I would be way too lazy to look up
+- *What I changed:* I ended up refactoring to not use regex for the time being as we can always refactor back later if the tools actually need them
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 

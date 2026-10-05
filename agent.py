@@ -106,9 +106,42 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         than a stack trace. The import is already at the top of this file.
     """
     session = new_session(query, wardrobe)
+    description = query.lower().replace(",", "")
+    size = None
+    max_price = None
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    if " under $" in description:
+        before_price, price_text = description.split(" under $", maxsplit=1)
+        price_parts = price_text.split(maxsplit=1)
+        max_price = float(price_parts[0])
+        description = before_price + (f" {price_parts[1]}" if len(price_parts) > 1 else "")
+    if " size " in description:
+        description, size = description.rsplit(" size ", maxsplit=1)
+        size = size.upper()
+
+    session["parsed"] = {
+        "description": description,
+        "size": size,
+        "max_price": max_price,
+    }
+
+    results = search_listings(description, size=size, max_price=max_price)
+    session["search_results"] = results
+
+    if not results:
+        session["error"] = (
+            "No listings matched that search. Try broader keywords, a different "
+            "size, or a higher budget."
+        )
+        return session
+
+    session["selected_item"] = session["search_results"][0]
+    session["outfit_suggestion"] = suggest_outfit(
+        session["selected_item"], session["wardrobe"]
+    )
+    session["fit_card"] = create_fit_card(
+        session["outfit_suggestion"], session["selected_item"]
+    )
     return session
 
 

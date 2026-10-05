@@ -29,6 +29,8 @@ tool calls and returns a fit card — in at least 4 of 5 tries.
      "my search is a plain keyword match and some phrasings will miss" is a
      real answer. -->
 
+If the model fails at any stage or runs into any issues such as rate limits or is unable to reach an endpoint, then the whole chain gets kinda messed up, so having a margin of error seems reasonable.
+
 ---
 
 ## 2. An impossible query stops before the second tool
@@ -39,6 +41,8 @@ Given a query that matches no listings, the agent stops before calling
 **Why this target:**
 <!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
      about this path? -->
+
+This is primarily for application security and can be much more consistent programmatically than the prior target.
 
 ---
 
@@ -54,10 +58,10 @@ Given a query that matches no listings, the agent stops before calling
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
 
-
+Could have a simple state machine running in the background that has a parameter that detects a 'close enough' match to the right item, ideally as a sort of trie to keep it as programmtically fast as possible. The state target we should shoot for is at least a 85% match of characters.
 
 **Why this target:**
-
+I think this is probably as programmatically consistent as an idea as I can come up with right now, and should ensure runs stay consistent. We should try to meet 4/5 of these as per the percentage target.
 
 
 ---
@@ -76,9 +80,10 @@ Given a query that matches no listings, the agent stops before calling
      be turned into a number. -->
 
 
+I think we should try to adhere to a system prompt for the fit card, but the system prompt should be very strict on including price in the caption as well as simple descriptors. Further description can be left up to the model and be a bit more stochastic. The fit card should at the minimum always have the price and the general vibe of the outfit in the caption. 5/5 tries
 
 **Why this target:**
-
+I think that this target is probably a bit easier to meet due to the ability to call the model for the task of generating text, and can be easily verified/checked.
 
 
 ---
@@ -92,10 +97,12 @@ Given a query that matches no listings, the agent stops before calling
      search respects a price ceiling — anything, as long as it names a number
      or an observable outcome. -->
 
+I really care about matching the user's budget constraints; fashion should not be limited to those who can pay for the best tools for it.
 
 
 **Why this target:**
-
+More of a metaphysical reason but I think that the reason I listed above and making sure user needs are taken into account will probably make for the best user experience
+and also insure the agent is running properly when working with numeric values.
 
 
 ---
