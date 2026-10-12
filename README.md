@@ -188,6 +188,12 @@ I couldn't resist grabbing this pink and purple butterfly baby tee when I spotte
      Don't fill these in during unit 3.
      ═══════════════════════════════════════════════════════════════════ -->
 
+     Moment 1:
+     Used AI to help me produce code for scenarios and agent.py, mostly since I did not really have the time this week. I did a full review of the agent's outputs though and ensured every test was running properly.
+
+     Moment 2:
+     Used AI to help write out some of the prompts and informations for the MCP server, just so that everything that the agent does works a little more smoothly.
+
 ---
 
 ## Run Log — Before
@@ -203,17 +209,244 @@ I couldn't resist grabbing this pink and purple butterfly baby tee when I spotte
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. Full three-tool run returns a fit card | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. Empty search stops before tool 2 and names what to change | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Item in session matches item passed on (at least 85% of characters) | 4 of 5 | FAIL | FAIL | FAIL | FAIL | FAIL | MISSED (0/5 demonstrated) |
+| 4. Fit card mentions the item's price and outfit vibe | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. Search returns nothing over the user's budget | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 
-**Real output from one try**, pasted as text, naming the file and function
-that produced it:
+Run: `python run_eval.py --label before`, five tries per scenario with caching
+off. Full output is saved in
+[the evaluator report](results/run_2026-10-11_2325_before.md) and
+[the terminal log](results/run_2026-10-11_2325_before_terminal.txt).
+The extra empty-wardrobe diagnostic completed in all five tries; it is separate
+from these five criteria.
+
+Scoring: criterion 1 completed all three tools with a non-empty fit card in
+every try. Criterion 2 returned no listings, traced an early stop before
+`suggest_outfit`, and named keywords, size, and budget as things to change.
+Criterion 4 selected the same $55 Mary Janes in every try; all five captions
+included $55.00 and an outfit vibe consistent with the styling suggestion.
+Criterion 5 returned only the $18 butterfly tee and $15 mesh top against an
+$18 ceiling in every try, including the inclusive boundary.
+
+Criterion 3 is marked FAIL for insufficient evidence, not an observed item
+mismatch: the selected item is recorded, but `trace.py` abbreviates the tool's
+input dictionary to its keys and never prints the `new_item` value. The run
+therefore cannot demonstrate the 85% character-match check. Its original
+4-of-5 target is preserved. Criterion 5 had no numerical target in
+`criteria.md`; this table uses the 5-of-5 target supplied for the run log.
+
+**Real output from one try for each criterion**
+
+Source: [run_2026-10-11_2325_before.md](results/run_2026-10-11_2325_before.md), written by `run_eval.py::write_report` from `run_eval.py::run_once`. Each excerpt below is try 1 from the saved before run.
+
+**Criterion 1 — try 1: matching query completes**
+
+Query: `vintage graphic tee under $30`. Produced by `agent.py::run_agent`, calling `mcp_client.py::call_tool`, `tools.py::suggest_outfit`, and `tools.py::create_fit_card`; trace formatting/printing by `trace.py::step`.
+
+- stopped early: no
+- selected_item: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+- search_results: 10
+
+Outfit suggestion:
 
 ```
+Here are two fun ways to style your butterfly baby tee!
 
+**Outfit 1: Y2K Streetwear**
+Pair the baby tee with the **baggy straight-leg jeans** and **chunky white sneakers**. Throw the **black cropped zip hoodie** over your shoulders and finish with the **black crossbody bag**.
+*Why it works:* The fitted, ultra-femme crop of the tee balances out the slouchy, cool vibe of the baggy jeans and chunky sneakers for an effortless 2000s off-duty look.
+
+**Outfit 2: Casual Grunge**
+Tuck the baby tee into the **wide-leg khaki trousers**, cinched with the **brown leather belt**. Add the **black combat boots** and the **vintage black denim jacket** on top.
+*Why it works:* The tough black boots and rugged denim jacket ground the sweet, pastel butterfly print, creating a cool contrast between edgy and playful elements.
+```
+
+Fit card:
+
+```
+I am completely obsessed with this dreamy little butterfly baby tee I just listed on Depop for $18.00! The pastel pink and purple print is giving major 2000s nostalgia, and it looks so cute tucked into wide-leg khaki trousers with chunky combat boots for that perfect edgy-meets-sweet vibe. Grab it before I change my mind and keep it for myself!
+```
+
+Trace:
+
+```
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun ways to style your butterfly baby tee!  **Outfit 1: Y2K Streetwear** Pair the baby tee with t…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am completely obsessed with this dreamy little butterfly baby tee I just listed on Depop for $18.00! The pas…
+```
+
+**Criterion 2 — try 1: impossible query stops early**
+
+Query: `intergalactic spacesuit size XXS under $1`. Produced by `agent.py::run_agent` (empty-search branch), after `mcp_client.py::call_tool`; trace formatting/printing by `trace.py::step`.
+
+- stopped early: yes — No listings matched that search. Try broader keywords, a different size, or a higher budget.
+- selected_item: (none)
+- search_results: 0
+
+Trace:
+
+```
+[1] parse_query
+      in:  intergalactic spacesuit size XXS under $1
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty, stopping
+```
+
+**Criterion 3 — try 1: selected item reaches outfit suggestion**
+
+Query: `corduroy wide-leg pants rust under $50`. Produced by `agent.py::run_agent` (item selection and handoff) and `tools.py::suggest_outfit`; trace formatting/printing by `trace.py::step`.
+
+- stopped early: no
+- selected_item: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+- search_results: 3
+
+Outfit suggestion:
+
+```
+Hey there! Those rust corduroy wide-leg pants are such a fun 70s find. Here is a cozy, earthy look you can pull right from your wardrobe:
+
+Tuck the **white ribbed tank top** into the high-waisted rust cords to define your waist, and add the **brown leather belt** to tie in that warm vintage vibe. Throw the **oversized grey crewneck sweatshirt** on top for a relaxed, slouchy feel, and finish with your **chunky white sneakers** for a comfortable, modern contrast.
+
+The soft grey and crisp white balance out the rich autumn tones of the pants, making it a super easy, stylish outfit for a casual day out!
+```
+
+Fit card:
+
+```
+Scoring these dreamy 70s-style rust corduroys on depop for just $32.00 honestly made my whole week. I love styling them with a tucked-in white tank, a slouchy grey crewneck, and chunky sneakers for the ultimate cozy, earthy vibe. It’s such an effortless look for running weekend errands while still feeling totally put-together.
+```
+
+Trace:
+
+```
+[1] parse_query
+      in:  corduroy wide-leg pants rust under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      →    branch: matches, continuing
+[3] select_item
+      in:  3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Hey there! Those rust corduroy wide-leg pants are such a fun 70s find. Here is a cozy, earthy look you can pul…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: Scoring these dreamy 70s-style rust corduroys on depop for just $32.00 honestly made my whole week. I love sty…
+```
+
+**Criterion 4 — try 1: repeated fit card includes price and outfit vibe**
+
+Query: `mary janes under $60`. Produced by `tools.py::create_fit_card`, called by `agent.py::run_agent`; trace formatting/printing by `trace.py::step`.
+
+- stopped early: no
+- selected_item: Platform Mary Janes — Black Patent ($55.0, depop)
+- search_results: 1
+
+Outfit suggestion:
+
+```
+Here is a fun, Y2K-inspired outfit to rock your new platform Mary Janes!
+
+Pair them with the **baggy straight-leg jeans** and the **white ribbed tank top**, then layer the **black cropped zip hoodie** on top. Finish the look with the **black crossbody bag**.
+
+**Why it works:** The fitted white tank balances the volume of the baggy dark-wash jeans, while the cropped zip-hoodie plays into that effortless 90s streetwear vibe. The shiny black patent Mary Janes add a cool, edgy contrast to the casual denim, tying the whole black-and-white color palette together seamlessly. You look effortlessly chic and ready for the day!
+```
+
+Fit card:
+
+```
+I am still obsessing over these shiny patent Mary Janes I just scored on depop for $55.00! They add the ultimate edgy contrast when I style them with my favorite baggy jeans, a fitted white tank, and a cropped zip hoodie. It is giving major 90s streetwear energy and I am never taking them off.
+```
+
+Trace:
+
+```
+[1] parse_query
+      in:  mary janes under $60
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 1 items: Platform Mary Janes — Black Patent
+      →    branch: matches, continuing
+[3] select_item
+      in:  1 items: Platform Mary Janes — Black Patent
+      out: Platform Mary Janes — Black Patent ($55.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a fun, Y2K-inspired outfit to rock your new platform Mary Janes!   Pair them with the **baggy straight…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still obsessing over these shiny patent Mary Janes I just scored on depop for $55.00! They add the ultima…
+```
+
+**Criterion 5 — try 1: search respects inclusive budget ceiling**
+
+Query: `graphic tee under $18`. Produced by `tools.py::search_listings`, exposed by `mcp_server.py::search_listings` and called through `mcp_client.py::call_tool` in `agent.py::run_agent`; trace formatting/printing by `trace.py::step`.
+
+- stopped early: no
+- selected_item: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+- search_results: 2
+
+Outfit suggestion:
+
+```
+Here are two fun, easy ways to style your new Y2K baby tee!
+
+**Outfit 1: Streetwear Edge**
+Pair the butterfly baby tee with the **baggy straight-leg jeans** and **chunky white sneakers**. Throw the **oversized grey crewneck sweatshirt** over your shoulders, and finish with the **black crossbody bag**.
+*Why it works:* The fitted, girly tee balances the slouchy, cool shape of the baggy jeans for that classic Y2K skater vibe.
+
+**Outfit 2: Casual Contrast**
+Tuck the baby tee into the **wide-leg khaki trousers**, cinched with the **brown leather belt**. Add the **chunky white sneakers** and the **black crossbody bag**.
+*Why it works:* The earthy khaki tones ground the playful pink and purple butterfly print, creating a cute, minimal look that feels effortless and modern.
+```
+
+Fit card:
+
+```
+I am still obsessed with the pastel butterfly print on this little Y2K tee I just scored on depop for $18.00. It is officially living in my daily rotation because it looks so good tucked into wide-leg khakis with a chunky belt for an effortless weekend vibe. When I want a more nostalgic skater look, I just swap the trousers for baggy denim and toss a slouchy grey crewneck over my shoulders.
+```
+
+Trace:
+
+```
+[1] parse_query
+      in:  graphic tee under $18
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      →    branch: matches, continuing
+[3] select_item
+      in:  2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun, easy ways to style your new Y2K baby tee!  **Outfit 1: Streetwear Edge** Pair the butterfly …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still obsessed with the pastel butterfly print on this little Y2K tee I just scored on depop for $18.00. …
 ```
 
 ---
@@ -238,15 +471,46 @@ that produced it:
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Full three-tool run returns a fit card | 4 of 5 | MET (5/5) | All five tries completed search, outfit generation, and a non-empty fit card; five passes meet the four-pass target. |
+| 2 | Empty search stops before tool 2 and names what to change | 5 of 5 | MET (5/5) | All five tries stopped after an empty MCP search, before suggest_outfit, and suggested changing keywords, size, or budget. |
+| 3 | Item in session matches item passed on (at least 85% of characters) | 4 of 5 | MISSED (0/5 demonstrated) | None of the five traces exposes the passed new_item value, so none demonstrates the required comparison; zero verified passes do not meet the four-pass target. |
+| 4 | Fit card mentions the item's price and outfit vibe | 5 of 5 | MET (5/5) | All five Mary Janes captions include $55.00 and the corresponding outfit vibe; every try meets the requirement. |
+| 5 | Search returns nothing over the user's budget | 5 of 5 | MET (5/5) | Every try returned only the $18 butterfly tee and $15 mesh top under an inclusive $18 ceiling; all five pass the supplied target. |
 
 **Diagnoses**
 
+**Criterion 3 — session handoff to `suggest_outfit`:** The state criterion
+missed with 0 of 5 demonstrated passes. In every try,
+`agent.py::run_agent` stores the selected listing in
+`session["selected_item"]` and passes it as `tool_inputs["new_item"]` to
+`suggest_outfit`. However, `trace.py::step` formats that input through
+`trace.py::_short`, which prints only the keys of a dictionary without a
+top-level `title`. Because the listing is nested under `new_item`, the trace
+prints `dict with keys: new_item, wardrobe` instead of the listing's identity
+or title. `run_eval.py::write_report` records the selected item but does not
+record the actual item received by the tool. This hides the second value
+needed for the 85% character-match comparison in all five tries.
 
+The failure is in observing the session handoff, rather than evidence that
+the tool received a different item. Record the selected item's ID/title and
+the ID/title received at the entry to `tools.py::suggest_outfit`, then compare
+the titles against the original threshold. The branch and model output cannot
+establish that comparison on their own.
+
+**Pattern:** All five unverified tries belong to criterion 3 and lose the same
+`new_item` value at the same trace-formatting step. This is one recurring
+observability problem in the session handoff, so the fix should record the
+actual tool input once rather than add five separate fixes or change the
+styling prompt. The other four criteria met their targets in this run.
+
+Passing those four does not establish that the targets are demanding. Criterion
+1 only requires completion, and some of its captions describe the user as a
+seller ("I just listed" or "my depop shop") even though the user is finding
+an item to buy. I would tighten criterion 4 in a future evaluation to require
+buyer-perspective captions with no invented ownership or selling claims, in
+addition to the correct price and outfit vibe. That would expose a model-output
+pattern the current targets allow. The original targets and before-run scores
+remain unchanged.
 
 ---
 
@@ -264,14 +528,37 @@ that produced it:
 
 **Happy path**
 
-```
-
+```text
+$ python app.py ask 'vintage graphic tee under $30' --trace
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a fun, Y2K-inspired outfit using your thrift find!   **Streetwear Contrast:** Pair the butterfly baby …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I couldn't resist grabbing this pastel butterfly baby tee when I spotted it on Depop for just $18.00! To lean …
 ```
 
 **Empty search**
 
-```
-
+```text
+$ python app.py ask 'intergalactic spacesuit size XXS under $1' --trace
+[1] parse_query
+      in:  intergalactic spacesuit size XXS under $1
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty, stopping
 ```
 
 **On the MCP move:** <!-- what changed in your code, and whether anything
@@ -279,6 +566,17 @@ behaved differently afterwards. If the rewire didn't work, say exactly where it
 broke — the error text and the last thing that worked. That earns the point in
 full. -->
 
+`agent.py::run_agent` now sends `description`, `size`, and `max_price` as an
+arguments dictionary to `mcp_client.call_tool("search_listings", ...)` rather
+than calling `tools.search_listings` directly. `mcp_server.py::search_listings`
+receives those values and forwards them to the original implementation. The
+MCP response is unwrapped back into the same list of listing dictionaries.
+
+The behavior did not change: direct and MCP calls returned identical ordered
+results for a matching query, a size-filtered query, and an empty query. The
+end-to-end query selected the same $18 butterfly tee as before. In this
+execution environment, the sandboxed stdio connection stalled; the same MCP
+call succeeded when run outside that sandbox.
 
 
 ---
@@ -290,21 +588,52 @@ full. -->
 
      `python run_eval.py --label after` -->
 
-**What I changed:**
+**What I changed:** Updated `trace.py::_short` so an input dictionary holding
+`new_item` now prints the item title, price, platform, and wardrobe item count.
+For example, the `suggest_outfit` trace now records `new_item: Corduroy
+Wide-Leg Pants — Rust ($32.0, depop)` instead of only `dict with keys:
+new_item, wardrobe`.
 
-**Which failure it was meant to fix:**
+**Which failure it was meant to fix:** Criterion 3 missed because its five
+before-run traces could not show that `session["selected_item"]` was the same
+listing passed into `suggest_outfit`. The change preserves concise traces while
+making that session handoff observable and scoreable.
 
 ### Run Log — After
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. Full three-tool run returns a fit card | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. Empty search stops before tool 2 and names what to change | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Item in session matches item passed on (at least 85% of characters) | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. Fit card mentions the item's price and outfit vibe | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 5. Search returns nothing over the user's budget | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 
-**Did it help, and how do I know:**
+Run: `python run_eval.py --label after`, five tries per scenario with caching
+off. Full output is saved in
+[the after evaluator report](results/run_2026-10-11_2352_after.md).
+
+The selected `Corduroy Wide-Leg Pants — Rust ($32.0, depop)` appears both in
+the `select_item` output and in the `suggest_outfit` input on every criterion
+3 try. That is an exact title match, which exceeds the original 85%
+character-match threshold. The other four criteria retained their before-run
+scores: 5/5 each.
+
+| Criterion | Before | After | Change |
+|---|---|---|---|
+| 1. Full three-tool run | MET (5/5) | MET (5/5) | No change |
+| 2. Empty search branch | MET (5/5) | MET (5/5) | No change |
+| 3. Session handoff | MISSED (0/5 demonstrated) | MET (5/5) | Trace now shows the passed item |
+| 4. Fit card price and vibe | MET (5/5) | MET (5/5) | No change |
+| 5. Budget ceiling | MET (5/5) | MET (5/5) | No change |
+
+**Did it help, and how do I know:** Yes. Before the change, each criterion 3
+trace reported only `dict with keys: new_item, wardrobe`, so the selected item
+could not be compared with the item passed to `suggest_outfit`; the criterion
+was therefore MISSED at 0/5 demonstrated. After the one trace-formatting
+change, all five traces print both values and show the same Corduroy Wide-Leg
+Pants listing. Criterion 3 changed from MISSED (0/5 demonstrated) to MET
+(5/5), while the other criterion scores stayed the same.
 
 <!-- If it made things worse, say that. Honestly reported, that earns full
      credit and is more interesting than one that worked. -->
@@ -314,6 +643,14 @@ full. -->
 ---
 
 ## What's Still Broken
+
+No acceptance criterion is still missed after the trace improvement. Criterion
+3 now has five observable handoffs, each with matching selected and passed item
+titles. A remaining quality concern is outside the current criteria: some model
+fit cards describe the user as a seller (for example, "I just listed") even
+though FitFindr helps them find an item to buy. I stopped here because the
+measured improvement was the missing handoff evidence. A later criterion could
+require buyer-perspective captions and drive a prompt change for that issue.
 
 <!-- For each criterion still missed: what you'd do, and why you stopped where
      you did. "I ran out of time" is fine if it's true. Pretending nothing is

@@ -15,7 +15,8 @@ Build and test your three tools in `tools.py` first. Then come here.
 
 import config
 import trace
-from tools import search_listings, suggest_outfit, create_fit_card
+from tools import suggest_outfit, create_fit_card
+from mcp_client import call_tool
 from generate import ModelUnavailable
 
 
@@ -105,6 +106,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
       • A handler for ModelUnavailable, so a bad key produces a message rather
         than a stack trace. The import is already at the top of this file.
     """
+    trace.start_trace()
     session = new_session(query, wardrobe)
     description = query.lower().replace(",", "")
     size = None
@@ -124,9 +126,18 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         "size": size,
         "max_price": max_price,
     }
+    trace.step("parse_query", inputs=query, returned=session["parsed"])
 
-    results = search_listings(description, size=size, max_price=max_price)
+    results = call_tool("search_listings", {
+        "description": description,
+        "size": size,
+        "max_price": max_price,
+    })
     session["search_results"] = results
+    trace.step(
+        "search_listings (via MCP)", inputs=session["parsed"], returned=results,
+        note="branch: empty, stopping" if not results else "branch: matches, continuing",
+    )
 
     if not results:
         session["error"] = (
@@ -136,12 +147,32 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         return session
 
     session["selected_item"] = session["search_results"][0]
-    session["outfit_suggestion"] = suggest_outfit(
-        session["selected_item"], session["wardrobe"]
-    )
-    session["fit_card"] = create_fit_card(
-        session["outfit_suggestion"], session["selected_item"]
-    )
+    trace.step("select_item", inputs=results, returned=session["selected_item"])
+    tool_name = "suggest_outfit"
+    tool_inputs = {
+        "new_item": session["selected_item"],
+        "wardrobe": session["wardrobe"],
+    }
+    try:
+        session["outfit_suggestion"] = suggest_outfit(**tool_inputs)
+        trace.step(
+            tool_name, inputs=tool_inputs, returned=session["outfit_suggestion"]
+        )
+        tool_name = "create_fit_card"
+        tool_inputs = {
+            "outfit": session["outfit_suggestion"],
+            "new_item": session["selected_item"],
+        }
+        session["fit_card"] = create_fit_card(**tool_inputs)
+        trace.step(
+            tool_name, inputs=tool_inputs, returned=session["fit_card"]
+        )
+    except ModelUnavailable as exc:
+        session["error"] = (
+            f"The model couldn't be reached. {exc} "
+            "Check your connection and model settings in .env, then try again."
+        )
+        trace.step(tool_name, inputs=tool_inputs, note=session["error"])
     return session
 
 

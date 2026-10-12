@@ -24,9 +24,34 @@ SCENARIOS = [
     {
         # A query nothing can match. Criterion 2 — the branch.
         "name": "impossible query stops early",
-        "query": "designer ballgown size XXS under $5",
+        "query": "intergalactic spacesuit size XXS under $1",
         "wardrobe": "example",
         "criterion": 2,
+    },
+    {
+        # Criterion 3: compare the selected listing with the item passed to
+        # suggest_outfit in the trace; apply the 85% character-match target.
+        "name": "selected item reaches outfit suggestion",
+        "query": "corduroy wide-leg pants rust under $50",
+        "wardrobe": "example",
+        "criterion": 3,
+    },
+    {
+        # Criterion 4: run_eval repeats this same query five times with cache
+        # off. Check each caption for the selected item's price and outfit vibe.
+        "name": "repeated fit card includes price and outfit vibe",
+        "query": "mary janes under $60",
+        "wardrobe": "example",
+        "criterion": 4,
+    },
+    {
+        # Criterion 5: $18 is an inclusive boundary (the butterfly tee costs
+        # exactly $18). Check ALL search results and the selected item's price
+        # against session['parsed']['max_price'], not just the caption.
+        "name": "search respects inclusive budget ceiling",
+        "query": "graphic tee under $18",
+        "wardrobe": "example",
+        "criterion": 5,
     },
     {
         # A user with nothing saved. One of unit 4's three failure modes.
@@ -35,18 +60,6 @@ SCENARIOS = [
         "wardrobe": "empty",
         "criterion": None,
     },
-    # TODO: add what your criteria 3, 4 and 5 need.
-    #
-    # Set "criterion" to the number in criteria.md that the scenario tests.
-    # "criterion": None means a diagnostic run — useful to have, but it isn't
-    # one of your five, and run_eval.py marks it as such in the table.
-    #
-    # For a state criterion, any normal query works — what you're checking is
-    # what ends up in the session, not what the user typed.
-    #
-    # For a fit-card criterion, you probably want the SAME query listed more
-    # than once, or several different items, depending on what your criterion
-    # actually says.
 ]
 
 WARDROBES = ("example", "empty")
