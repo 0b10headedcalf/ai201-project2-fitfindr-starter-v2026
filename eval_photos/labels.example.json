@@ -1,0 +1,28 @@
+{
+  "wardrobe": [
+    {"file": "closet_01.jpg", "items": [
+      {"category": "tops", "note": "white tee"},
+      {"category": "bottoms", "note": "black jeans"},
+      {"category": "shoes", "note": "white sneakers"}
+    ]}
+  ],
+  "profile": [
+    {"file": "person_01.jpg", "note": "full body, daylight"}
+  ],
+  "bad": [
+    {"file": "food.jpg", "route": "/wardrobe/scan"},
+    {"file": "landscape.jpg", "route": "/profile/analyze"},
+    {"file": "group.jpg", "route": "/profile/analyze"}
+  ],
+  "occasions": [
+    "job interview at a design studio",
+    "outdoor summer wedding",
+    "rainy day errands",
+    "first date at a jazz bar",
+    "casual Friday at the office"
+  ],
+  "outfit_profile": {
+    "undertone": "warm", "contrast": "medium", "hair_color": "dark brown",
+    "flattering_colors": ["olive", "rust", "cream"], "avoid_colors": ["icy pastels"]
+  }
+}

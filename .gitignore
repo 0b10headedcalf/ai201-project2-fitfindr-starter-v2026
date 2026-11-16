@@ -1,0 +1,30 @@
+# API keys — never commit these
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Cached model responses
+.cache/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# NOTE: results/ is deliberately NOT ignored. Your run logs are evidence that
+# the test actually happened, and they're part of what gets graded. Commit them.
+
+# Capstone structured request log (pasted into README instead)
+logs/
+.gstack/
+
+# Local SQLite fallback for db.py (Postgres is used when DATABASE_URL is set)
+data/fitfindr.db

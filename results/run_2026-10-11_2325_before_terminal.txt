@@ -1,0 +1,494 @@
+Cache is OFF for this run — that's deliberate.
+
+matching query completes  (example wardrobe)
+  query: vintage graphic tee under $30
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun ways to style your butterfly baby tee!  **Outfit 1: Y2K Streetwear** Pair the baby tee with t…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am completely obsessed with this dreamy little butterfly baby tee I just listed on Depop for $18.00! The pas…
+  try 1: completed — fit card 346 chars
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Hey there! Here are two super fun ways to style your new butterfly baby tee:  **Outfit 1: Y2K Streetwear** Pai…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am completely obsessed with this pastel butterfly baby tee, which just landed in my depop shop for $18.00! I…
+  try 2: completed — fit card 390 chars
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun, easy ways to style your new butterfly baby tee!  **Outfit 1: Y2K Streetwear** Pair the baby …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am completely obsessed with this dreamy little butterfly tee I just scored for $18.00 over on depop. The whi…
+  try 3: completed — fit card 311 chars
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun, balanced looks for your butterfly baby tee!  **Look 1: Y2K Streetwear** Pair the baby tee wi…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I still can't believe I scored this dreamy butterfly baby tee for just $18.00 on depop. The pastel pink and pu…
+  try 4: completed — fit card 339 chars
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun, easy ways to style your new butterfly baby tee!  **Outfit 1: Y2K Streetwear** Pair the baby …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still pinching myself over finding this dreamy pink and purple butterfly baby tee for just $18.00 on depo…
+  try 5: completed — fit card 358 chars
+
+impossible query stops early  (example wardrobe)
+  query: intergalactic spacesuit size XXS under $1
+[1] parse_query
+      in:  intergalactic spacesuit size XXS under $1
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 1: stopped early — No listings matched that search. Try broader keywords, a dif
+[1] parse_query
+      in:  intergalactic spacesuit size XXS under $1
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 2: stopped early — No listings matched that search. Try broader keywords, a dif
+[1] parse_query
+      in:  intergalactic spacesuit size XXS under $1
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 3: stopped early — No listings matched that search. Try broader keywords, a dif
+[1] parse_query
+      in:  intergalactic spacesuit size XXS under $1
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 4: stopped early — No listings matched that search. Try broader keywords, a dif
+[1] parse_query
+      in:  intergalactic spacesuit size XXS under $1
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 5: stopped early — No listings matched that search. Try broader keywords, a dif
+
+selected item reaches outfit suggestion  (example wardrobe)
+  query: corduroy wide-leg pants rust under $50
+[1] parse_query
+      in:  corduroy wide-leg pants rust under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      →    branch: matches, continuing
+[3] select_item
+      in:  3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Hey there! Those rust corduroy wide-leg pants are such a fun 70s find. Here is a cozy, earthy look you can pul…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: Scoring these dreamy 70s-style rust corduroys on depop for just $32.00 honestly made my whole week. I love sty…
+  try 1: completed — fit card 328 chars
+[1] parse_query
+      in:  corduroy wide-leg pants rust under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      →    branch: matches, continuing
+[3] select_item
+      in:  3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a cozy, retro outfit for your gorgeous rust cords!   Pair the **Corduroy Wide-Leg Pants** with the fit…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I still can't believe I scored these dreamy rust corduroy wide-legs on Depop for just $32.00! They are the ult…
+  try 2: completed — fit card 370 chars
+[1] parse_query
+      in:  corduroy wide-leg pants rust under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      →    branch: matches, continuing
+[3] select_item
+      in:  3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a cozy, retro-inspired outfit for your amazing new corduroy pants!  **The 70s Earth-Tone Look:** Pair …
+  [rate limit] 15 requests used this minute. Waiting 42s. This is normal.
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I couldn't resist scooping up these rust corduroy wide-leg pants on Depop for just $32.00, and they are offici…
+  try 3: completed — fit card 403 chars
+[1] parse_query
+      in:  corduroy wide-leg pants rust under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      →    branch: matches, continuing
+[3] select_item
+      in:  3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a cozy, retro-inspired outfit built around your amazing rust corduroy pants!  Tuck the **white ribbed …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I scored these dreamily textured rust corduroy pants for just $32.00 on depop, and I am already obsessed with …
+  try 4: completed — fit card 399 chars
+[1] parse_query
+      in:  corduroy wide-leg pants rust under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      →    branch: matches, continuing
+[3] select_item
+      in:  3 items: Corduroy Wide-Leg Pants — Rust, Low-Rise Cargo Pants — Khaki, Wide-Leg Linen Trousers — Natural
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a cozy, retro-inspired outfit for your amazing thrift find:  Pair your **Corduroy Wide-Leg Pants** wit…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I couldn't resist scooping up these dreamy rust corduroy wide-legs on Depop for just $32.00, and they are seri…
+  try 5: completed — fit card 404 chars
+
+repeated fit card includes price and outfit vibe  (example wardrobe)
+  query: mary janes under $60
+[1] parse_query
+      in:  mary janes under $60
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 1 items: Platform Mary Janes — Black Patent
+      →    branch: matches, continuing
+[3] select_item
+      in:  1 items: Platform Mary Janes — Black Patent
+      out: Platform Mary Janes — Black Patent ($55.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a fun, Y2K-inspired outfit to rock your new platform Mary Janes!   Pair them with the **baggy straight…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still obsessing over these shiny patent Mary Janes I just scored on depop for $55.00! They add the ultima…
+  try 1: completed — fit card 294 chars
+[1] parse_query
+      in:  mary janes under $60
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 1 items: Platform Mary Janes — Black Patent
+      →    branch: matches, continuing
+[3] select_item
+      in:  1 items: Platform Mary Janes — Black Patent
+      out: Platform Mary Janes — Black Patent ($55.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a fun, effortless streetwear outfit for your new Mary Janes!   Pair your **Platform Mary Janes** with …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still not over scoring these glossy black platform Mary Janes on depop for just $55.00! They are the ulti…
+  try 2: completed — fit card 277 chars
+[1] parse_query
+      in:  mary janes under $60
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 1 items: Platform Mary Janes — Black Patent
+      →    branch: matches, continuing
+[3] select_item
+      in:  1 items: Platform Mary Janes — Black Patent
+      out: Platform Mary Janes — Black Patent ($55.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a fun, Y2K-inspired outfit to rock your new platform Mary Janes!   Pair your **Platform Mary Janes** w…
+  [rate limit] 15 requests used this minute. Waiting 2s. This is normal.
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I couldn't resist scooping up these shiny patent Mary Janes for just $55.00 over on Depop, and they are about …
+  try 3: completed — fit card 383 chars
+[1] parse_query
+      in:  mary janes under $60
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 1 items: Platform Mary Janes — Black Patent
+      →    branch: matches, continuing
+[3] select_item
+      in:  1 items: Platform Mary Janes — Black Patent
+      out: Platform Mary Janes — Black Patent ($55.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a fun, Y2K-inspired outfit to rock those platform Mary Janes!   Pair the patent shoes with the **baggy…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still obsessing over these glossy black patent Mary Janes I just scored on depop for $55.00! They add the…
+  try 4: completed — fit card 328 chars
+[1] parse_query
+      in:  mary janes under $60
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 1 items: Platform Mary Janes — Black Patent
+      →    branch: matches, continuing
+[3] select_item
+      in:  1 items: Platform Mary Janes — Black Patent
+      out: Platform Mary Janes — Black Patent ($55.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a cool, effortless outfit to try with your new platforms:  Pair your **Platform Mary Janes** with the …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I scored these glossy black patent platform Mary Janes on depop for just $55.00, and they are about to live on…
+  try 5: completed — fit card 360 chars
+
+search respects inclusive budget ceiling  (example wardrobe)
+  query: graphic tee under $18
+[1] parse_query
+      in:  graphic tee under $18
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      →    branch: matches, continuing
+[3] select_item
+      in:  2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+  [rate limit] 15 requests used this minute. Waiting 42s. This is normal.
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun, easy ways to style your new Y2K baby tee!  **Outfit 1: Streetwear Edge** Pair the butterfly …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still obsessed with the pastel butterfly print on this little Y2K tee I just scored on depop for $18.00. …
+  try 1: completed — fit card 393 chars
+[1] parse_query
+      in:  graphic tee under $18
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      →    branch: matches, continuing
+[3] select_item
+      in:  2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun ways to style your new butterfly baby tee!   **Outfit 1: Y2K Streetwear** Pair the baby tee w…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I couldn't resist this dreamy pink and purple butterfly baby tee when I spotted it on depop for just $18.00! I…
+  try 2: completed — fit card 432 chars
+[1] parse_query
+      in:  graphic tee under $18
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      →    branch: matches, continuing
+[3] select_item
+      in:  2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun, easy ways to style your new butterfly baby tee!  **Outfit 1: Y2K Streetwear** Pair the baby …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I couldn't resist adding this dreamy purple butterfly baby tee to my collection, especially for just $18.00 on…
+  try 3: completed — fit card 364 chars
+[1] parse_query
+      in:  graphic tee under $18
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      →    branch: matches, continuing
+[3] select_item
+      in:  2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here are two fun, easy outfits utilizing your new Y2K baby tee!  **Outfit 1: Casual Streetwear** Pair the butt…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am so obsessed with this pastel butterfly baby tee I just scored on Depop for $18.00! The sweet graphic prin…
+  try 4: completed — fit card 337 chars
+[1] parse_query
+      in:  graphic tee under $18
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      →    branch: matches, continuing
+[3] select_item
+      in:  2 items: Y2K Baby Tee — Butterfly Print, Mesh Long-Sleeve Top — Black
+      out: Y2K Baby Tee — Butterfly Print ($18.0, depop)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: Here is a fun, balanced outfit using your wardrobe pieces:  **Y2K Streetwear Vibe:** Pair your butterfly baby …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I literally gasped when I found this dreamy pink and purple butterfly baby tee scrolling on Depop for just $18…
+  try 5: completed — fit card 377 chars
+
+empty wardrobe  (empty wardrobe)
+  query: denim jacket under $50
+[1] parse_query
+      in:  denim jacket under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+  [rate limit] 15 requests used this minute. Waiting 2s. This is normal.
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: That light-wash cropped jacket is such a versatile find! Because of the structured shoulders and shorter hem, …
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I couldn’t resist scoring this vintage light-wash denim jacket for just $42.00 on Poshmark, especially with th…
+  try 1: completed — fit card 327 chars
+[1] parse_query
+      in:  denim jacket under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: That cropped light-wash denim jacket is such a versatile find! Because of the vintage structure and shorter he…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I’ve been hunting forever for the perfect vintage cropped denim jacket, and I finally scored this dreamy light…
+  try 2: completed — fit card 405 chars
+[1] parse_query
+      in:  denim jacket under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: That light-wash, cropped jacket is such a versatile find! Here are two fun ways to style it:  **Look 1: Effort…
+  [rate limit] 15 requests used this minute. Waiting 42s. This is normal.
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still not over scoring this perfect vintage light-wash denim jacket for just $42.00 on Poshmark. The crop…
+  try 3: completed — fit card 321 chars
+[1] parse_query
+      in:  denim jacket under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: That cropped, light-wash denim jacket is a fantastic find! Because of the structured shoulders and vintage vib…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I am still not over scoring this dreamy vintage cropped denim jacket on Poshmark for just $42.00! The structur…
+  try 4: completed — fit card 355 chars
+[1] parse_query
+      in:  denim jacket under $50
+      out: dict with keys: description, size, max_price
+[2] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      →    branch: matches, continuing
+[3] select_item
+      in:  7 items: Denim Jacket — Light Wash, Cropped, Vintage Levi's 501 Jeans — Medium Wash, 90s Track Jacket — Navy/White Stripe … +4 more
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+[4] suggest_outfit
+      in:  dict with keys: new_item, wardrobe
+      out: That light-wash cropped denim jacket is such a versatile find! Here are two fun ways to style it:  **Option 1:…
+[5] create_fit_card
+      in:  dict with keys: outfit, new_item
+      out: I couldn't resist scooping up this vintage light-wash denim jacket on Poshmark for just $42.00, and it has the…
+  try 5: completed — fit card 341 chars
+
+Wrote results/run_2026-10-11_2325_before.md
+50 model calls this session, 15767 prompt + 6258 output tokens
+
+Commit this file. It's the evidence the test actually happened.

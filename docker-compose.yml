@@ -1,0 +1,40 @@
+# Emulates the deployed setup on your machine:
+#   app → Render free web service (Python 3.13.1, gunicorn, 512 MB, 0.1 CPU)
+#   db  → hosted Postgres (Neon in production)
+#
+#   docker compose up --build        → http://localhost:10000
+#   docker compose logs -f app       → the structured log, as Render shows it
+#   docker compose down              → stop (data kept)    · add -v to wipe it
+services:
+  app:
+    build: .
+    ports:
+      - "10000:10000"
+    env_file: .env                      # GEMINI_API_KEY
+    environment:
+      DATABASE_URL: postgresql://fitfindr:fitfindr@db:5432/fitfindr
+      AI201_LOG_PATH: /app/logs/runs.jsonl
+    volumes:
+      - ./logs:/app/logs                # keep the log file (Render's disk wouldn't)
+    mem_limit: 512m                     # Render free tier
+    cpus: 0.1                           # Render free tier — slow on purpose
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fitfindr
+      POSTGRES_PASSWORD: fitfindr
+      POSTGRES_DB: fitfindr
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitfindr"]
+      interval: 2s
+      retries: 15
+
+volumes:
+  pgdata:

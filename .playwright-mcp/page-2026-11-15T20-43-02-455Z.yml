@@ -1,0 +1,54 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: FitFindr
+      - generic [ref=e7]: A little less deciding. A little more wearing.
+  - generic [ref=e8]:
+    - heading "Your closet, put together." [level=1] [ref=e9]
+    - paragraph [ref=e10]: Add your clothes, find your colors, and make a look for whatever’s next.
+  - main [ref=e11]:
+    - generic [ref=e12]:
+      - heading "01 Your wardrobe" [level=2] [ref=e13]:
+        - generic [ref=e14]: "01"
+        - text: Your wardrobe
+      - paragraph [ref=e15]: Start with a flat-lay or an open closet. We’ll add the pieces we find to your wardrobe.
+      - generic [ref=e16] [cursor=pointer]:
+        - button "Upload your clothes Choose photos or drag them here" [ref=e17]
+        - generic [ref=e20]: Upload your clothes
+        - generic [ref=e21]: Choose photos or drag them here
+      - list [ref=e22]:
+        - listitem [ref=e23]:
+          - generic [ref=e24]: Your pieces will appear here.
+      - generic [ref=e25]:
+        - button "Add example wardrobe" [ref=e26] [cursor=pointer]
+        - button "Clear wardrobe" [ref=e27] [cursor=pointer]
+    - generic [ref=e28]:
+      - heading "02 Your colors Optional" [level=2] [ref=e29]:
+        - generic [ref=e30]: "02"
+        - text: Your colors
+        - generic [ref=e31]: Optional
+      - paragraph [ref=e32]: Find colors that work for you with a full-body photo in daylight. You can adjust the results.
+      - generic [ref=e33] [cursor=pointer]:
+        - button "Add a photo of you Choose a photo or drag it here" [ref=e34]
+        - generic [ref=e37]: Add a photo of you
+        - generic [ref=e38]: Choose a photo or drag it here
+    - generic [ref=e39]:
+      - heading "03 The occasion" [level=2] [ref=e40]:
+        - generic [ref=e41]: "03"
+        - text: The occasion
+      - paragraph [ref=e42]: Tell us what’s on the calendar. We’ll put a look together from pieces you already own.
+      - textbox "What are you dressing for?" [ref=e43]:
+        - /placeholder: A dinner with friends, a summer wedding, a first day at work…
+      - generic [ref=e44]:
+        - button "Job interview" [ref=e45] [cursor=pointer]
+        - button "First date" [ref=e46] [cursor=pointer]
+        - button "Summer wedding guest" [ref=e47] [cursor=pointer]
+        - button "Casual Friday" [ref=e48] [cursor=pointer]
+        - button "Concert" [ref=e49] [cursor=pointer]
+      - button "Put a look together" [ref=e51] [cursor=pointer]
+  - contentinfo [ref=e54]:
+    - paragraph [ref=e56]: "Photos are analyzed by an AI model and stored, compressed, against an anonymous ID kept in this browser. There is no account: clearing this browser's site data loses access to them."
+    - generic [ref=e57]:
+      - paragraph [ref=e58]: 0 of 60 photos stored · 0.0 MB
+      - paragraph [ref=e59]:
+        - button "Delete everything I've stored" [ref=e60] [cursor=pointer]

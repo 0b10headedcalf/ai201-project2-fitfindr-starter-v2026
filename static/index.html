@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitFindr</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f8f8; --card: #fff; --ink: #202525; --muted: #626b6b;
+    --line: #dce1e1; --accent: #253c37; --accent-ink: #fff; --chip: #f1f4f3;
+    --hover: #e8eeec; --ok: #32664b; --bad: #b13e3e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151818; --card: #1c2020; --ink: #e8eceb; --muted: #a0abaa;
+      --line: #353d3b; --accent: #d0ded8; --accent-ink: #18241f; --chip: #252c2a;
+      --hover: #303b36; --ok: #9cc6ac; --bad: #f09b9b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  header { border-bottom: 1px solid var(--line); background: var(--card); }
+  .header-inner { max-width: 1200px; margin: auto; padding: 22px 32px;
+    display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 650; letter-spacing: -.7px; }
+  .brand svg { width: 25px; height: 25px; color: var(--accent); }
+  .header-note { color: var(--muted); font-size: 12px; }
+  .intro { max-width: 1200px; margin: auto; padding: 48px 32px 30px; }
+  h1 { font-size: clamp(26px, 3vw, 34px); font-weight: 550; line-height: 1.25; letter-spacing: -1.2px; margin: 0; }
+  .intro p { color: var(--muted); margin: 10px 0 0; }
+  main { max-width: 1200px; margin: 0 auto; padding: 0 32px 40px; display: grid; gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 24px; min-width: 0; }
+  h2 { font-size: 16px; font-weight: 600; letter-spacing: -.3px; margin: 0 0 12px;
+    display: flex; gap: 10px; align-items: center; }
+  h2 .n { color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0;
+    font-variant-numeric: tabular-nums; }
+  .optional { margin-left: auto; color: var(--muted); font-size: 11px; font-weight: 400; letter-spacing: 0; }
+  .hint { color: var(--muted); font-size: 13px; margin: 0 0 20px; line-height: 1.65; }
+  section > .hint { min-height: 64px; }
+  .drop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; min-height: 150px; border: 1px dashed var(--line); border-radius: 5px; padding: 20px 12px;
+    text-align: center; cursor: pointer; background: var(--bg); transition: border-color .15s, background .15s; }
+  .drop svg { width: 23px; height: 23px; margin-bottom: 5px; color: var(--muted); }
+  .drop span { font-size: 13px; font-weight: 500; }
+  .drop small { font-size: 11px; color: var(--muted); }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--chip); }
+  .drop input { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+  button, select, textarea { font: inherit; }
+  button { border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 5px; padding: 8px 12px; cursor: pointer; font-size: 12px;
+    transition: background .15s, border-color .15s; }
+  button:hover { background: var(--chip); border-color: var(--muted); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+    font-size: 13px; font-weight: 500; padding: 11px 16px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 12px; }
+  button.primary:hover { opacity: .88; }
+  button.primary svg { width: 16px; height: 16px; }
+  button.link { background: none; border: none; padding: 0; color: var(--muted); text-decoration: underline;
+    text-underline-offset: 3px; font-size: 11px; }
+  button:disabled { opacity: .55; cursor: progress; }
+  button:focus-visible, select:focus-visible, textarea:focus-visible, .drop:focus-within {
+    outline: 2px solid var(--accent); outline-offset: 3px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  #clear { color: var(--muted); }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; margin-top: 16px; }
+  .gallery:empty { display: none; }
+  .gallery figure { margin: 0; position: relative; aspect-ratio: 1; border-radius: 4px; overflow: hidden;
+    background: var(--chip); cursor: pointer; outline: 2px solid transparent; }
+  .gallery figure.sel { outline-color: var(--accent); }
+  .gallery img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gallery figure button { position: absolute; top: 3px; right: 3px; padding: 0 6px; font-size: 14px; line-height: 22px;
+    background: rgba(0,0,0,.7); color: #fff; border: none; border-radius: 3px; }
+  .items { list-style: none; padding: 0; margin: 16px 0 0; display: grid; max-height: 320px; overflow: auto; }
+  .items li { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--line); padding: 9px 0; font-size: 13px; }
+  .items li.empty { border: 0; padding: 0; }
+  .items .cat { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); min-width: 64px; }
+  .items .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .items button { padding: 0 6px; background: none; border: none; color: var(--muted); font-size: 18px; }
+  .status { font-size: 12px; margin-top: 14px; overflow-wrap: anywhere; }
+  .status:empty { display: none; }
+  .status.err { color: var(--bad); } .status.ok { color: var(--ok); }
+  #profile-view:not(:empty) { margin-top: 20px; }
+  .profile-head { display: flex; gap: 12px; align-items: flex-start; }
+  .profile-head img { width: 72px; height: 100px; object-fit: cover; border-radius: 4px; background: var(--chip); flex: none; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
+  .sw { display: flex; align-items: center; gap: 6px; font-size: 11px; background: var(--chip);
+    border-radius: 4px; padding: 4px 8px 4px 4px; }
+  .sw i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(128,128,128,.3); display: inline-block; }
+  .sw.avoid { text-decoration: line-through; opacity: .75; }
+  dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 8px; margin: 0 0 16px; font-size: 12px; }
+  dt { color: var(--muted); } dd { margin: 0; overflow-wrap: anywhere; }
+  select, textarea { color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; max-width: 100%; }
+  textarea { display: block; width: 100%; min-height: 150px; resize: vertical; padding: 12px; font-size: 13px; line-height: 1.6; }
+  textarea::placeholder { color: var(--muted); opacity: 1; }
+  .quick { gap: 6px; margin-top: 12px; }
+  .quick button { font-size: 11px; padding: 5px 8px; border-color: transparent; background: var(--chip); }
+  .quick button:hover { background: var(--hover); }
+  .outfit { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+  .outfit strong { font-weight: 650; }
+  footer { max-width: 1136px; margin: 0 auto 32px; padding: 20px 0 0; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; gap: 24px; color: var(--muted); font-size: 11px; }
+  .privacy-note { max-width: 590px; }
+  footer p { margin: 0 0 6px; }
+  .storage-note { text-align: right; flex-shrink: 0; }
+  @media (max-width: 1000px) {
+    main { gap: 12px; } section { padding: 18px; }
+    footer { margin-left: 32px; margin-right: 32px; }
+  }
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; gap: 16px; }
+    section > .hint { min-height: 0; } .drop { min-height: 130px; }
+    .intro { padding-top: 32px; } footer { flex-direction: column; gap: 12px; }
+    .storage-note { text-align: left; }
+  }
+  @media (max-width: 480px) {
+    .header-inner { padding: 18px 20px; } .header-note { display: none; }
+    .intro { padding: 30px 20px 24px; } main { padding: 0 20px 28px; }
+    footer { margin: 0 20px 24px; } h1 { letter-spacing: -.8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6a2 2 0 1 1 3 1.73L12 9v2L3 16a1.5 1.5 0 0 0 .75 2.8h16.5A1.5 1.5 0 0 0 21 16l-9-5"/></svg>FitFindr</div>
+    <span class="header-note">Your personal wardrobe</span>
+  </div>
+</header>
+<div class="intro">
+  <h1>Your closet, put together.</h1>
+  <p>Add your clothes, find your colors, and make a look for whatever’s next.</p>
+</div>
+
+<main>
+  <section id="wardrobe">
+    <h2><span class="n">01</span> Your wardrobe</h2>
+    <p class="hint">Start with a flat-lay or an open closet. We’ll add the pieces we find to your wardrobe.</p>
+    <label class="drop" id="wardrobe-drop"><input type="file" accept="image/*" multiple id="wardrobe-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg><span>Upload your clothes</span><small>Choose photos or drag them here</small></label>
+    <div role="status" class="status" id="wardrobe-status"></div>
+    <div class="gallery" id="gallery"></div>
+    <ul class="items" id="items"></ul>
+    <div class="row">
+      <button id="example">Add example wardrobe</button>
+      <button id="clear">Clear wardrobe</button>
+    </div>
+  </section>
+
+  <section id="profile">
+    <h2><span class="n">02</span> Your colors <span class="optional">Optional</span></h2>
+    <p class="hint">Find colors that work for you with a full-body photo in daylight. You can adjust the results.</p>
+    <label class="drop" id="profile-drop"><input type="file" accept="image/*" id="profile-file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg><span>Add a photo of you</span><small>Choose a photo or drag it here</small></label>
+    <div role="status" class="status" id="profile-status"></div>
+    <div id="profile-view"></div>
+  </section>
+
+  <section id="occasion">
+    <h2><span class="n">03</span> The occasion</h2>
+    <p class="hint">Tell us what’s on the calendar. We’ll put a look together from pieces you already own.</p>
+    <textarea aria-label="What are you dressing for?" id="occasion-text" placeholder="A dinner with friends, a summer wedding, a first day at work…"></textarea>
+    <div class="row quick" id="quick"></div>
+    <div class="row"><button class="primary" id="style">Put a look together <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></button></div>
+    <div role="status" class="status" id="outfit-status"></div>
+    <div id="outfit"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="privacy-note"><p>Photos are analyzed by an AI model and stored, compressed, against an anonymous ID kept in this browser.
+     There is no account: clearing this browser's site data loses access to them.</p></div>
+  <div class="storage-note"><p id="usage"></p>
+  <p><button class="link" id="forget">Delete everything I've stored</button></p></div>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// ── anonymous per-browser ID ───────────────────────────────
+// The only thing kept in localStorage. Everything else lives on the server.
+function browserId() {
+  let id = null;
+  try { id = localStorage.getItem("ff_user_id"); } catch {}
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID()
+       : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+           (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    try { localStorage.setItem("ff_user_id", id); } catch {}
+  }
+  return id;
+}
+const USER = browserId();
+
+let wardrobe = { items: [] }, photos = [], profile = null, selectedPhoto = null;
+const thumbUrls = new Map();   // photo_id → object URL
+
+function setStatus(id, text, kind = "") { const el = $(id); el.textContent = text; el.className = "status " + kind; }
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+async function call(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), "X-User-Id": USER } });
+  let body = {};
+  try { body = await res.json(); } catch {}
+  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+  return body;
+}
+
+// ── shrink before upload ───────────────────────────────────
+// ~1600px WebP for the model and storage, ~320px for thumbnails. A 4 MB phone
+// photo becomes ~200 KB: faster upload, ~20x less storage, fewer image tokens.
+// If the browser can't decode the file (HEIC outside Safari), send it as-is.
+async function shrink(file, maxSide, quality) {
+  let bmp;
+  try { bmp = await createImageBitmap(file); } catch { return null; }
+  const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bmp.width * scale); canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  bmp.close?.();
+  const toBlob = (type) => new Promise((r) => canvas.toBlob(r, type, quality));
+  let blob = await toBlob("image/webp");
+  if (!blob || blob.type !== "image/webp") blob = await toBlob("image/jpeg");  // older Safari
+  return blob;
+}
+const MAX_UPLOAD = 8 * 1024 * 1024;   // matches MAX_UPLOAD_MB in serve.py
+async function photoForm(file) {
+  const fd = new FormData();
+  const [full, thumb] = await Promise.all([shrink(file, 1600, 0.82), shrink(file, 320, 0.7)]);
+  // Couldn't shrink it (e.g. HEIC outside Safari) and it's over the limit:
+  // say so here rather than uploading 8+ MB just to be refused.
+  if (!full && file.size > MAX_UPLOAD) {
+    throw new Error(`${file.name} is ${(file.size / 1048576).toFixed(1)} MB and this browser can't shrink it. ` +
+                    "Try a JPEG or PNG under 8 MB.");
+  }
+  fd.append("image", full || file, full ? "photo.webp" : file.name);
+  if (thumb) fd.append("thumb", thumb, "thumb.webp");
+  return fd;
+}
+
+// Photos need the X-User-Id header, which an <img src> can't send, so they're
+// fetched as blobs. The ID never goes in a URL.
+async function thumbUrl(photoId) {
+  if (thumbUrls.has(photoId)) return thumbUrls.get(photoId);
+  const res = await fetch(`/photos/${photoId}?thumb=1`, { headers: { "X-User-Id": USER } });
+  if (!res.ok) return "";
+  const url = URL.createObjectURL(await res.blob());
+  thumbUrls.set(photoId, url);
+  return url;
+}
+
+// ── wardrobe ───────────────────────────────────────────────
+async function renderGallery() {
+  const el = $("gallery");
+  if (!photos.length) { el.innerHTML = ""; return; }
+  el.innerHTML = photos.map((p) => `
+    <figure data-id="${p.id}" class="${p.id === selectedPhoto ? "sel" : ""}" title="Show items from this photo">
+      <img alt="Wardrobe photo"><button title="Delete photo and its items">×</button>
+    </figure>`).join("");
+  el.querySelectorAll("figure").forEach(async (fig) => {
+    const id = fig.dataset.id;
+    fig.onclick = () => { selectedPhoto = selectedPhoto === id ? null : id; renderGallery(); renderItems(); };
+    fig.querySelector("button").onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm("Delete this photo and the items scanned from it?")) return;
+      try {
+        const out = await call(`/photos/${id}`, { method: "DELETE" });
+        wardrobe = out.wardrobe; photos = photos.filter((p) => p.id !== id);
+        if (selectedPhoto === id) selectedPhoto = null;
+        renderGallery(); renderItems(); refreshUsage();
+      } catch (err) { setStatus("wardrobe-status", err.message, "err"); }
+    };
+    fig.querySelector("img").src = await thumbUrl(id);
+  });
+}
+
+function renderItems() {
+  const ul = $("items");
+  const shown = selectedPhoto ? wardrobe.items.filter((it) => it.photo_id === selectedPhoto) : wardrobe.items;
+  if (!shown.length) { ul.innerHTML = `<li class="empty"><span class="name hint" style="margin:0">Your pieces will appear here.</span></li>`; return; }
+  ul.innerHTML = shown.map((it) => `
+    <li><span class="cat">${esc(it.category)}</span>
+        <span class="name">${esc(it.name)}</span>
+        <button title="Remove" data-id="${esc(it.id)}">×</button></li>`).join("");
+  ul.querySelectorAll("button").forEach((b) => b.onclick = async () => {
+    try {
+      await call(`/wardrobe/items/${b.dataset.id}`, { method: "DELETE" });
+      wardrobe.items = wardrobe.items.filter((it) => it.id !== b.dataset.id); renderItems();
+    } catch (err) { setStatus("wardrobe-status", err.message, "err"); }
+  });
+}
+
+async function scanFiles(files) {
+  files = [...files].filter((f) => f.type.startsWith("image/") || /\.(heic|heif)$/i.test(f.name));
+  if (!files.length) return;
+  let added = 0; const problems = [];
+  for (const [i, file] of files.entries()) {
+    setStatus("wardrobe-status", `Scanning ${files.length > 1 ? `${i + 1} of ${files.length}` : "photo"}… a few seconds each.`);
+    try {
+      const out = await call("/wardrobe/scan", { method: "POST", body: await photoForm(file) });
+      wardrobe.items.push(...out.items); added += out.items.length;
+      if (out.photo_id) photos.push({ id: out.photo_id });
+      renderGallery(); renderItems();
+    } catch (err) { problems.push(`${file.name}: ${err.message}`); }
+  }
+  refreshUsage();
+  setStatus("wardrobe-status",
+    [added ? `Added ${added} item${added === 1 ? "" : "s"}.` : "", ...problems].filter(Boolean).join("  "),
+    problems.length ? "err" : "ok");
+}
+$("wardrobe-file").onchange = (e) => { scanFiles(e.target.files); e.target.value = ""; };
+
+$("example").onclick = async () => {
+  try { wardrobe = (await call("/wardrobe/example", { method: "POST" })).wardrobe; renderItems();
+        setStatus("wardrobe-status", "Added the example wardrobe.", "ok"); }
+  catch (err) { setStatus("wardrobe-status", err.message, "err"); }
+};
+$("clear").onclick = async () => {
+  if (!confirm("Delete every wardrobe item and wardrobe photo?")) return;
+  try { await call("/wardrobe", { method: "DELETE" }); wardrobe = { items: [] }; photos = []; selectedPhoto = null;
+        renderGallery(); renderItems(); refreshUsage(); setStatus("wardrobe-status", ""); }
+  catch (err) { setStatus("wardrobe-status", err.message, "err"); }
+};
+
+// ── profile ────────────────────────────────────────────────
+function swatch(name, avoid) {
+  const css = name.replace(/\s+/g, "");
+  const ok = CSS.supports("color", css);
+  return `<span class="sw ${avoid ? "avoid" : ""}"><i style="background:${ok ? esc(css) : "transparent"}"></i>${esc(name)}</span>`;
+}
+async function renderProfile() {
+  const v = $("profile-view");
+  if (!profile) { v.innerHTML = ""; return; }
+  const opt = (vals, cur) => vals.map((x) => `<option ${x === cur ? "selected" : ""}>${x}</option>`).join("");
+  v.innerHTML = `
+    <div class="profile-head">
+      ${profile.photo_id ? `<img id="p-photo" alt="Your profile photo">` : ""}
+      <dl>
+        <dt>Undertone</dt><dd><select id="p-under">${opt(["warm", "cool", "neutral"], profile.undertone)}</select></dd>
+        <dt>Contrast</dt><dd><select id="p-con">${opt(["low", "medium", "high"], profile.contrast)}</select></dd>
+        <dt>Hair</dt><dd>${esc(profile.hair_color)}</dd>
+        <dt>Eyes</dt><dd>${esc(profile.eye_color)}</dd>
+      </dl>
+    </div>
+    <div class="hint" style="margin:0">Wear</div>
+    <div class="swatches">${(profile.flattering_colors || []).map((c) => swatch(c)).join("")}</div>
+    <div class="hint" style="margin:0">Keep away from your face</div>
+    <div class="swatches">${(profile.avoid_colors || []).map((c) => swatch(c, true)).join("")}</div>
+    <button id="p-clear">Remove profile and photo</button>`;
+  const save = async (field, value) => {
+    try { profile = await call("/profile", { method: "PUT", headers: { "Content-Type": "application/json" },
+                                             body: JSON.stringify({ [field]: value }) });
+          setStatus("profile-status", "Saved.", "ok"); }
+    catch (err) { setStatus("profile-status", err.message, "err"); }
+  };
+  $("p-under").onchange = (e) => save("undertone", e.target.value);
+  $("p-con").onchange = (e) => save("contrast", e.target.value);
+  $("p-clear").onclick = async () => {
+    try { await call("/profile", { method: "DELETE" }); profile = null; renderProfile(); refreshUsage();
+          setStatus("profile-status", ""); }
+    catch (err) { setStatus("profile-status", err.message, "err"); }
+  };
+  if (profile.photo_id) $("p-photo").src = await thumbUrl(profile.photo_id);
+}
+async function analyzeFile(file) {
+  if (!file) return;
+  setStatus("profile-status", "Reading your colors…");
+  try {
+    profile = await call("/profile/analyze", { method: "POST", body: await photoForm(file) });
+    renderProfile(); refreshUsage();
+    setStatus("profile-status", "Done. Adjust anything that looks off.", "ok");
+  } catch (err) { setStatus("profile-status", err.message, "err"); }
+}
+$("profile-file").onchange = (e) => { analyzeFile(e.target.files[0]); e.target.value = ""; };
+
+// ── drag and drop on both drop zones ───────────────────────
+[["wardrobe-drop", (fs) => scanFiles(fs)], ["profile-drop", (fs) => analyzeFile(fs[0])]].forEach(([id, handle]) => {
+  const zone = $(id);
+  zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("over"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+  zone.addEventListener("drop", (e) => { e.preventDefault(); zone.classList.remove("over"); handle(e.dataTransfer.files); });
+});
+
+// ── occasion ───────────────────────────────────────────────
+["Job interview", "First date", "Summer wedding guest", "Casual Friday", "Concert"].forEach((q) => {
+  const b = document.createElement("button"); b.textContent = q;
+  b.onclick = () => $("occasion-text").value = q; $("quick").appendChild(b);
+});
+$("style").onclick = async () => {
+  const occasion = $("occasion-text").value.trim();
+  if (!occasion) { setStatus("outfit-status", "Type an occasion first.", "err"); return; }
+  $("style").disabled = true; $("outfit").innerHTML = "";
+  setStatus("outfit-status", "Putting a look together…");
+  try {
+    // No wardrobe in the body: the server uses what's stored for this browser.
+    const out = await call("/outfit", { method: "POST", headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ occasion }) });
+    const html = esc(out.outfit).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    $("outfit").innerHTML = `<div class="outfit">${html}</div>`;
+    setStatus("outfit-status", out.items_used.length ? `Uses ${out.items_used.length} piece(s) you own.` : "", "ok");
+  } catch (err) { setStatus("outfit-status", err.message, "err"); }
+  finally { $("style").disabled = false; }
+};
+
+// ── usage + forget me ──────────────────────────────────────
+async function refreshUsage() {
+  try {
+    const s = (await call("/me")).storage;
+    $("usage").textContent = `${s.photos} of ${s.max_photos} photos stored · ${(s.bytes / 1024 / 1024).toFixed(1)} MB`;
+  } catch {}
+}
+$("forget").onclick = async () => {
+  if (!confirm("Delete your whole wardrobe, profile and every photo? This can't be undone.")) return;
+  try {
+    await call("/me", { method: "DELETE" });
+    wardrobe = { items: [] }; photos = []; profile = null; selectedPhoto = null;
+    renderGallery(); renderItems(); renderProfile(); refreshUsage();
+  } catch (err) { alert(err.message); }
+};
+
+// ── load ───────────────────────────────────────────────────
+(async () => {
+  renderItems();
+  try {
+    const me = await call("/me");
+    wardrobe = me.wardrobe; photos = me.photos; profile = me.profile;
+    renderGallery(); renderItems(); renderProfile();
+    $("usage").textContent = `${me.storage.photos} of ${me.storage.max_photos} photos stored · ${(me.storage.bytes / 1024 / 1024).toFixed(1)} MB`;
+  } catch (err) { setStatus("wardrobe-status", err.message, "err"); }
+})();
+</script>
+</body>
+</html>

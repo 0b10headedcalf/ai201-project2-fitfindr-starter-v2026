@@ -1,0 +1,16 @@
+.git
+.venv
+venv
+.env
+.cache
+.gstack
+logs
+data/fitfindr.db
+__pycache__
+*.pyc
+eval_photos/*.jpg
+eval_photos/*.jpeg
+eval_photos/*.png
+eval_photos/*.heic
+eval_photos/*.webp
+results
