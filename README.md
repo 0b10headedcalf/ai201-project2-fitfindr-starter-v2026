@@ -716,3 +716,58 @@ Shape C: extend one capability. FitFindr can now take **photos as input**. A sin
 - **No separate file storage.** Photos are stored in Postgres, compressed in the browser first (about 1600 px WebP plus a 320 px thumbnail). At this size that's simpler than running a second service; a bucket would be the next step.
 - **No body-shape analysis.** The profile covers coloring only, and the user can edit every field.
 - The original `/ask` thrift loop is unchanged.
+
+**Instrumentation**
+
+Every request to `serve.py` writes one JSON line, success or failure, to stdout (Render's log view) and to `logs/runs.jsonl` (see RUNNING.md, "The log", for every field). The wrapper is `serve.py::logged`. It times the request, takes the token counts the model service reports and subtracts the before and after values, and turns any exception into a status code plus an `error` field, so a failed run leaves a record instead of a gap.
+
+The entries below come from the **clean-clone test**: a fresh `git clone` of this branch into an empty folder, set up from RUNNING.md alone, started under `gunicorn serve:app --workers 1 --timeout 120` (the same command as Render) with the cache off. The first nine are three full runs of the measurement below (scan → profile → outfit). The `outfit` text and the item-name lists are shortened here; nothing else is edited.
+
+```jsonl
+{"ts": "2026-11-16T17:33:56.009+00:00", "route": "/wardrobe/scan", "user": null, "status": 200, "duration_ms": 3438, "input": {"bytes": 96147, "filename": "closet1.jpg", "mime": "image/jpeg"}, "output": {"items": 11, "categories": ["tops", "tops", "tops", "tops", "tops", "tops", "tops", "tops", "tops", "tops", "outerwear"], "dropped": 0}, "model_calls": 1, "prompt_tokens": 1227, "output_tokens": 767, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:33:57.799+00:00", "route": "/profile/analyze", "user": null, "status": 200, "duration_ms": 1789, "input": {"bytes": 208410, "filename": "person1.jpg", "mime": "image/jpeg"}, "output": {"undertone": "warm", "contrast": "medium", "hair_color": "dark brown"}, "model_calls": 1, "prompt_tokens": 1247, "output_tokens": 124, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:33:59.190+00:00", "route": "/outfit", "user": null, "status": 200, "duration_ms": 1389, "input": {"occasion": "job interview at a design studio", "wardrobe_items": 11, "has_profile": true}, "output": {"outfit": "Hello! For your design studio interview, let's keep it sharp…", "owned_items_named": 2}, "model_calls": 1, "prompt_tokens": 362, "output_tokens": 127, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:34:54.822+00:00", "route": "/wardrobe/scan", "user": null, "status": 200, "duration_ms": 37886, "input": {"bytes": 208410, "filename": "person1.jpg", "mime": "image/jpeg"}, "output": {"items": 3, "categories": ["tops", "bottoms", "shoes"], "dropped": 0}, "model_calls": 1, "prompt_tokens": 1239, "output_tokens": 276, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:34:57.313+00:00", "route": "/profile/analyze", "user": null, "status": 200, "duration_ms": 2490, "input": {"bytes": 208410, "filename": "person1.jpg", "mime": "image/jpeg"}, "output": {"undertone": "warm", "contrast": "high", "hair_color": "dark brown"}, "model_calls": 1, "prompt_tokens": 1247, "output_tokens": 122, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:34:59.158+00:00", "route": "/outfit", "user": null, "status": 200, "duration_ms": 1844, "input": {"occasion": "job interview at a design studio", "wardrobe_items": 3, "has_profile": true}, "output": {"outfit": "Here is a chic, creative outfit for your design studio inter…", "owned_items_named": 3}, "model_calls": 1, "prompt_tokens": 232, "output_tokens": 123, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:35:02.156+00:00", "route": "/wardrobe/scan", "user": null, "status": 200, "duration_ms": 2996, "input": {"bytes": 96147, "filename": "closet1.jpg", "mime": "image/jpeg"}, "output": {"items": 13, "categories": ["tops", "tops", "tops", "tops", "tops", "tops", "tops", "tops", "tops", "tops", "tops", "tops", "bottoms"], "dropped": 0}, "model_calls": 1, "prompt_tokens": 1227, "output_tokens": 948, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:35:03.435+00:00", "route": "/profile/analyze", "user": null, "status": 200, "duration_ms": 1278, "input": {"bytes": 208410, "filename": "person1.jpg", "mime": "image/jpeg"}, "output": {"undertone": "warm", "contrast": "high", "hair_color": "dark brown"}, "model_calls": 1, "prompt_tokens": 1247, "output_tokens": 125, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:35:04.456+00:00", "route": "/outfit", "user": null, "status": 200, "duration_ms": 1019, "input": {"occasion": "rainy day errands", "wardrobe_items": 13, "has_profile": true}, "output": {"outfit": "Hey there! For your rainy day errands, let’s keep you comfor…", "owned_items_named": 2}, "model_calls": 1, "prompt_tokens": 406, "output_tokens": 142, "model": "gemini-3.5-flash-lite", "error": null}
+{"ts": "2026-11-16T17:35:05.732+00:00", "route": "/wardrobe/scan", "user": null, "status": 200, "duration_ms": 1275, "input": {"bytes": 106159, "filename": "closet2.jpg", "mime": "image/jpeg"}, "output": {"items": 4, "categories": ["tops", "tops", "tops", "tops"], "dropped": 0}, "model_calls": 1, "prompt_tokens": 1227, "output_tokens": 332, "model": "gemini-3.5-flash-lite", "error": null}
+```
+
+Failed runs, sent on purpose to the same server right after:
+
+```jsonl
+{"ts": "2026-11-16T17:35:25.198+00:00", "route": "/wardrobe/scan", "user": null, "status": 400, "duration_ms": 0, "input": {"bytes": 12, "filename": "notimage.txt", "mime": null}, "output": {}, "model_calls": 0, "prompt_tokens": 0, "output_tokens": 0, "model": "gemini-3.5-flash-lite", "error": "That file isn't a JPEG, PNG, WebP or HEIC image."}
+{"ts": "2026-11-16T17:35:54.531+00:00", "route": "/wardrobe/scan", "user": null, "status": 422, "duration_ms": 29328, "input": {"bytes": 2000, "filename": "truncated.jpg", "mime": "image/jpeg"}, "output": {"items": 0, "categories": [], "dropped": 0}, "model_calls": 1, "prompt_tokens": 1227, "output_tokens": 22, "model": "gemini-3.5-flash-lite", "error": "The image is heavily obscured and lacks any clearly visible clothing items."}
+{"ts": "2026-11-16T17:35:57.262+00:00", "route": "/profile/analyze", "user": null, "status": 422, "duration_ms": 2725, "input": {"bytes": 96147, "filename": "closet1.jpg", "mime": "image/jpeg"}, "output": {}, "model_calls": 1, "prompt_tokens": 1235, "output_tokens": 71, "model": "gemini-3.5-flash-lite", "error": "Expected exactly one person in the photo, found 0."}
+{"ts": "2026-11-16T17:35:57.267+00:00", "route": "/outfit", "user": null, "status": 400, "duration_ms": 0, "input": {"occasion": "", "wardrobe_items": 10, "has_profile": false}, "output": {}, "model_calls": 0, "prompt_tokens": 0, "output_tokens": 0, "model": "gemini-3.5-flash-lite", "error": "Send JSON with an 'occasion' field, e.g. {\"occasion\": \"outdoor summer wedding\"}"}
+```
+
+What the log already shows, worth coming back to in Milestone 5:
+
+- **Same photo, different answers.** `person1.jpg` got `contrast: "medium"` in one run and `"high"` in the next two. `closet1.jpg` scanned as 11 items one time and 13 the next, and the last item was `outerwear` one time and `bottoms` the next. Temperature is 0.2, not 0.
+- **A broken file still costs a model call.** A JPEG cut off after 2,000 bytes passed the magic-byte check, went to the model, and was billed 1,227 prompt tokens before coming back as 422. The text file was stopped before any call (`model_calls: 0`).
+- **The 37.9 s and 29.3 s entries are the rate limiter, not the model.** `generate.py` holds to 15 requests a minute, and the server printed `[rate limit] 15 requests used this minute. Waiting 36s.` The token counts on those lines are normal.
+
+**What It Costs**
+
+**$0.0027 per run** at paid Standard rates, about 370 full runs per dollar. One run is **2,774 prompt + 743 output tokens** (mean of 10), in **3 model calls**. On a free-tier key the bill is $0, and what runs out first is the rate limit, not money.
+
+How it was measured:
+
+- **One run** = the full flow for a new user: `POST /wardrobe/scan` (a clothes photo) → `POST /profile/analyze` (one full-body person) → `POST /outfit` (an occasion, plus the wardrobe and profile the first two calls returned). It is scripted in [`measure_cost.py`](measure_cost.py), so it can be run again.
+- **Tokens** are the counts the Gemini API reports for each response (`usage_metadata`). `serve.py` writes them into each log line, and the script sums the lines each run added. They come from the API, not from estimating.
+- **Cache off** (`AI201_CACHE=0`). Otherwise runs 2–10 would be cache hits costing 0 tokens.
+- **Setup:** the clean-clone install, gunicorn with 1 worker, `gemini-3.5-flash-lite`, 2026-11-16. Photos: two clothes-rack photos and one full-body photo (free Unsplash images, kept out of the repo), rotated across runs. Occasions rotated across five.
+- **Dollars** = mean tokens × [Google's published Standard rate](https://ai.google.dev/gemini-api/docs/pricing) for this model: $0.30 per 1M input tokens (image input included), $2.50 per 1M output tokens. 2,774 × $0.30/1M + 743 × $2.50/1M = $0.00083 + $0.00186 = **$0.0027**. The tokens are measured; only the price per token comes from the pricing page.
+
+| | mean | min | max |
+|---|---|---|---|
+| Prompt tokens | 2,774 | 2,713 | 2,880 |
+| Output tokens | 743 | 486 | 1,215 |
+| Model calls | 3 | 3 | 3 |
+| Server time per run | 8.5 s | 3.7 s | 42.2 s |
+
+The server time is skewed by one run: run 6 waited 36 s on the rate limiter. The **median is 4.9 s**, and that's the more honest "how long does it take" number. Output tokens vary the most, and they follow the item count: a scan that finds 13 items writes about three times as much as one that finds 3. Since output costs 8× more than input, **busy closet photos cost the most**. The image itself is a nearly fixed ~1,200 prompt tokens whatever its size (96 KB and 208 KB photos cost almost the same).

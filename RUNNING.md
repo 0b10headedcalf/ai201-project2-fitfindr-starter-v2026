@@ -179,11 +179,17 @@ The first request after a quiet period takes about a minute while the service wa
 From a clean checkout:
 
 ```bash
+git clone -b capstone https://github.com/0b10headedcalf/ai201-project2-fitfindr-starter-v2026.git
+cd ai201-project2-fitfindr-starter-v2026
+python3 --version               # must say 3.11, 3.12 or 3.13 — see below if it says 3.14
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env            # paste GEMINI_API_KEY
+python test.py                  # every line PASS before you go on
 python serve.py                 # → http://localhost:5000
 ```
+
+> **Check the Python version first.** The clean-clone test of these steps failed here the first time. The repo's `.python-version` asks pyenv for `3.13`. On a machine where pyenv doesn't have 3.13 installed, `python3` silently fell back to the system's **3.14**, and `pip install` completed without an error. Only `test.py` caught it afterwards. If `python3 --version` says 3.14, build the venv with a supported version directly, e.g. `python3.13 -m venv .venv`, or `PYENV_VERSION=3.12.13 python3 -m venv .venv` with pyenv, or `uv venv -p 3.13`.
 
 Open `http://localhost:5000` for the demo page. To run it the way Render does: `python -m gunicorn serve:app --workers 1 --timeout 120`.
 
@@ -272,6 +278,18 @@ Fields:
 - `model_calls`, `prompt_tokens`, `output_tokens`, `model`, `error`
 
 Render's disk is wiped when the service sleeps, so copy the lines you need into the README in the same session.
+
+### Measuring the cost of a run
+
+```bash
+# terminal 1: cache OFF, or runs 2–10 cost nothing
+AI201_CACHE=0 AI201_LOG_PATH=logs/cost.jsonl python -m gunicorn serve:app --workers 1 --timeout 120
+# terminal 2
+python measure_cost.py --base http://localhost:8000 --log logs/cost.jsonl \
+  --clothes closet1.jpg closet2.jpg --person me.jpg
+```
+
+Ten runs of scan → profile → outfit by default. It prints each run's tokens and time, then the mean, min and max. The results and the method are in the README under **What It Costs**.
 
 ### Running the capstone eval
 
