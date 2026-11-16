@@ -11,7 +11,7 @@ ones the model service reports back (usage_metadata), read from the server's
 structured log — not estimated from a pricing page. Start the server with the
 cache OFF, or every run after the first costs zero tokens:
 
-    AI201_CACHE=0 AI201_LOG_PATH=logs/cost.jsonl python -m gunicorn serve:app --workers 1 --timeout 120
+    AI201_CACHE=0 AI201_IP_LIMIT_PER_MINUTE=0 AI201_LOG_PATH=logs/cost.jsonl python -m gunicorn serve:app --workers 1 --timeout 120
     python measure_cost.py --log logs/cost.jsonl --clothes a.jpg b.jpg --person me.jpg
 
 Against the deployed service (--base https://...onrender.com) there is no

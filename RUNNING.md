@@ -250,13 +250,16 @@ The timings were taken under the 0.1 CPU limit.
 
 **Per-user storage.** Send the browser's ID as an `X-User-Id: <uuid>` header; the page does this for you. With the header, a successful scan or profile analysis is **stored** (photo, thumbnail, items or profile). Without it, those routes stay stateless, which is how `capstone_eval.py` calls them. Each browser can store at most 60 photos (`AI201_MAX_PHOTOS`); past that, uploads return **409**. Photos that fail (422) are never stored.
 
+**Abuse limits.** The API key is the app's, and the routes are public, so the four routes that call the model (`/ask`, `/wardrobe/scan`, `/profile/analyze`, `/outfit`) are limited **per client IP**: 6 requests a minute and 60 an hour (`AI201_IP_LIMIT_PER_MINUTE`, `AI201_IP_LIMIT_PER_HOUR`; `0` per minute turns it off). Past that they return **429** with a `Retry-After` header. When several photos are uploaded at once, the page waits out a short limit and retries by itself. On Render the client IP comes from `X-Forwarded-For`, trusting one proxy hop (`AI201_TRUSTED_PROXIES`, which is 1 when Render's `RENDER` variable is set and 0 otherwise). Behind that, `generate.py` paces every caller together at 15 model calls a minute and stops after 300 calls per process (**503**, until the service restarts). Neither limit replaces the Google-side ones: use a key from a project **without billing**, or set a budget alert and a daily quota for the Generative Language API.
+
 Status codes:
 
 - **400**: no image, not an image, a file the model can't decode, an empty query/occasion, or a missing/invalid `X-User-Id` on a storage route
 - **413**: over 8 MB
 - **422**: no clothing found, or not exactly one person
 - **409**: photo limit reached for this browser
-- **503**: the model can't be reached, or the database can't
+- **429**: too many requests from this IP, try again after `Retry-After` seconds
+- **503**: the model can't be reached, the database can't, or the service has used its model budget (300 calls) since it last started
 - **500**: anything unexpected (logged with the exception)
 
 ```bash
@@ -272,7 +275,7 @@ Every request writes one JSON line, including failures. It goes to **stdout** (s
 
 Fields:
 
-- `ts`, `route`, `user` (the first 8 characters of the browser ID; the full ID is never logged), `status`, `duration_ms`
+- `ts`, `route`, `user` (the first 8 characters of the browser ID; the full ID is never logged), `client` (8 characters of a hash of the IP; the IP itself is never logged), `status`, `duration_ms`
 - `input`: the query/occasion, or an image's mime and byte size. The image itself is never logged.
 - `output`: an item count and categories, the undertone, or the first 120 characters of the outfit
 - `model_calls`, `prompt_tokens`, `output_tokens`, `model`, `error`
@@ -282,8 +285,8 @@ Render's disk is wiped when the service sleeps, so copy the lines you need into 
 ### Measuring the cost of a run
 
 ```bash
-# terminal 1: cache OFF, or runs 2–10 cost nothing
-AI201_CACHE=0 AI201_LOG_PATH=logs/cost.jsonl python -m gunicorn serve:app --workers 1 --timeout 120
+# terminal 1: cache OFF (or runs 2–10 cost nothing), per-IP limit OFF (30 requests in ~1 min)
+AI201_CACHE=0 AI201_IP_LIMIT_PER_MINUTE=0 AI201_LOG_PATH=logs/cost.jsonl python -m gunicorn serve:app --workers 1 --timeout 120
 # terminal 2
 python measure_cost.py --base http://localhost:8000 --log logs/cost.jsonl \
   --clothes closet1.jpg closet2.jpg --person me.jpg

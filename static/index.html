@@ -198,9 +198,15 @@ async function call(path, opts = {}) {
   const res = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), "X-User-Id": USER } });
   let body = {};
   try { body = await res.json(); } catch {}
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+  if (!res.ok) {
+    const err = new Error(body.error || `Request failed (${res.status})`);
+    err.status = res.status;
+    err.retryAfter = Number(res.headers.get("Retry-After")) || 0;
+    throw err;
+  }
   return body;
 }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── shrink before upload ───────────────────────────────────
 // ~1600px WebP for the model and storage, ~320px for thumbnails. A 4 MB phone
@@ -291,9 +297,21 @@ async function scanFiles(files) {
   if (!files.length) return;
   let added = 0; const problems = [];
   for (const [i, file] of files.entries()) {
-    setStatus("wardrobe-status", `Scanning ${files.length > 1 ? `${i + 1} of ${files.length}` : "photo"}… a few seconds each.`);
+    const label = files.length > 1 ? `${i + 1} of ${files.length}` : "photo";
+    setStatus("wardrobe-status", `Scanning ${label}… a few seconds each.`);
     try {
-      const out = await call("/wardrobe/scan", { method: "POST", body: await photoForm(file) });
+      let out;
+      for (;;) {
+        try { out = await call("/wardrobe/scan", { method: "POST", body: await photoForm(file) }); break; }
+        catch (err) {
+          // The server limits each connection to a few scans a minute. In a
+          // batch, wait out the limit and send the same photo again rather
+          // than failing it. Only short waits: an hourly limit is a real stop.
+          if (err.status !== 429 || !err.retryAfter || err.retryAfter > 90) throw err;
+          setStatus("wardrobe-status", `Scanning ${label}… pausing ${err.retryAfter}s for the rate limit.`);
+          await sleep(err.retryAfter * 1000);
+        }
+      }
       wardrobe.items.push(...out.items); added += out.items.length;
       if (out.photo_id) photos.push({ id: out.photo_id });
       renderGallery(); renderItems();

@@ -41,7 +41,9 @@ import threading
 # and fixes the Windows console encoding for every module that imports it.
 import config  # noqa: F401
 
+import collections
 import functools
+import hashlib
 import json
 import time
 from datetime import datetime, timezone
@@ -49,11 +51,12 @@ from pathlib import Path
 
 from flask import Flask, g, jsonify, request, send_from_directory
 from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import db
 import generate
 from agent import run_agent
-from generate import InvalidInput, ModelUnavailable
+from generate import InvalidInput, ModelUnavailable, QuotaGuard
 from tools import analyze_profile, outfit_for_occasion, scan_wardrobe
 from utils.data_loader import get_example_wardrobe
 
@@ -65,6 +68,15 @@ app = Flask(__name__)
 # Anything bigger is refused before it's read: werkzeug raises 413, which the
 # logged() wrapper below turns into JSON and a log line.
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+
+# Behind Render's proxy, remote_addr is the proxy, not the visitor. ProxyFix
+# takes the client IP from X-Forwarded-For, trusting exactly as many hops as
+# there are proxies in front of us. Trusting more than there are would let a
+# client pick its own IP by sending the header itself. Render sets RENDER=true;
+# locally there is no proxy, so nothing is trusted.
+_TRUSTED_PROXIES = int(os.getenv("AI201_TRUSTED_PROXIES", "1" if os.getenv("RENDER") else "0"))
+if _TRUSTED_PROXIES:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=_TRUSTED_PROXIES)
 
 
 # ── structured log (capstone) ────────────────────────────────────────────────
@@ -118,6 +130,9 @@ def logged(route: str):
                 "route": route,
                 # First 8 characters only: the full ID is the user's only key.
                 "user": g.user_id[:8] if g.user_id else None,
+                # A hash, not the IP: enough to see whether one client is
+                # hammering the service, without logging who they are.
+                "client": _client_tag(),
                 "status": response.status_code,
                 "duration_ms": round((time.perf_counter() - started) * 1000),
                 "input": g.log_input,
@@ -221,6 +236,75 @@ def _quota_full() -> str | None:
     return None
 
 
+# ── abuse limits ──────────────────────────────────────────────────────────────
+# The routes are public and the API key is ours, so each one that reaches the
+# model is limited per client IP. generate.py's 15/min pacing is shared by
+# everyone; without this, one script could take all of it and every real user
+# would queue behind it.
+#
+# Requests are counted, not model calls: /ask and the full photo flow make
+# 2–3 calls each, so 6 requests a minute is a busy human, not a loop. Rejected
+# requests count too — a bad upload still costs a read and a log line. The
+# counts live in memory, which is right for one gunicorn worker; they reset on
+# restart, as does generate.py's session budget.
+
+IP_LIMIT_PER_MINUTE = int(os.getenv("AI201_IP_LIMIT_PER_MINUTE", "6"))
+IP_LIMIT_PER_HOUR = int(os.getenv("AI201_IP_LIMIT_PER_HOUR", "60"))
+
+_hits: dict[str, collections.deque] = {}
+_hits_lock = threading.Lock()
+
+
+def _client_ip() -> str:
+    return request.remote_addr or "unknown"
+
+
+def _client_tag() -> str:
+    return hashlib.sha256(_client_ip().encode()).hexdigest()[:8]
+
+
+def _over_limit(ip: str) -> int | None:
+    """Seconds until this IP may try again, or None (and the hit is counted)."""
+    if IP_LIMIT_PER_MINUTE <= 0:
+        return None  # AI201_IP_LIMIT_PER_MINUTE=0 turns it off, e.g. for measure_cost.py
+    now = time.monotonic()
+    with _hits_lock:
+        window = _hits.setdefault(ip, collections.deque())
+        while window and now - window[0] > 3600:
+            window.popleft()
+        last_minute = sum(1 for t in window if now - t < 60)
+        if last_minute >= IP_LIMIT_PER_MINUTE:
+            oldest = next(t for t in window if now - t < 60)
+            return int(60 - (now - oldest)) + 1
+        if len(window) >= IP_LIMIT_PER_HOUR:
+            return int(3600 - (now - window[0])) + 1
+        window.append(now)
+        # Drop clients that have gone quiet, so the dict can't grow forever.
+        if len(_hits) > 10_000:
+            for key in [k for k, v in _hits.items() if not v or now - v[-1] > 3600]:
+                del _hits[key]
+        return None
+
+
+def rate_limited(view):
+    """Refuse with 429 before any work is done. Goes under @logged, so it's logged."""
+    @functools.wraps(view)
+    def wrapper(*args, **kwargs):
+        retry_after = _over_limit(_client_ip())
+        if retry_after is not None:
+            response = _fail(429, f"Too many requests from your connection. "
+                                  f"Try again in {retry_after} seconds.")
+            response = app.make_response(response)
+            response.headers["Retry-After"] = str(retry_after)
+            return response
+        return view(*args, **kwargs)
+    return wrapper
+
+
+_BUDGET_SPENT = ("The demo has used its model budget for now. It resets when the "
+                 "service restarts — try again later.")
+
+
 # ── one request at a time ─────────────────────────────────────────────────────
 # Here's why this exists.
 #
@@ -271,6 +355,7 @@ def health():
 
 @app.post("/ask")
 @logged("/ask")
+@rate_limited
 def ask():
     """
     Run the agent on one query.
@@ -315,13 +400,15 @@ def ask():
     with _one_at_a_time:
         try:
             session = run_agent(query, wardrobe)
+        except QuotaGuard:
+            failure = (503, _BUDGET_SPENT)
         except Exception as exc:  # noqa: BLE001 — a 500 with a sentence beats a hang
-            failure = f"{type(exc).__name__}: {exc}"
+            failure = (500, f"{type(exc).__name__}: {exc}")
 
     # Outside the lock: building a response is not work the next caller should
     # be waiting on.
     if failure is not None:
-        return _fail(500, failure)
+        return _fail(*failure)
 
     item = session.get("selected_item") or {}
     g.log_output = {
@@ -344,10 +431,13 @@ def _run_model(fn, *args):
             return None, (400, str(exc))
         except ModelUnavailable as exc:
             return None, (503, str(exc))
+        except QuotaGuard:
+            return None, (503, _BUDGET_SPENT)
 
 
 @app.post("/wardrobe/scan")
 @logged("/wardrobe/scan")
+@rate_limited
 def wardrobe_scan():
     """
     In: multipart 'image' (+ optional 'thumb'). Out: {"items": [...]} in the
@@ -389,6 +479,7 @@ def wardrobe_scan():
 
 @app.post("/profile/analyze")
 @logged("/profile/analyze")
+@rate_limited
 def profile_analyze():
     """In: multipart 'image' (one person, full body). Out: a color profile."""
     image, problem = _read_image()
@@ -420,6 +511,7 @@ def profile_analyze():
 
 @app.post("/outfit")
 @logged("/outfit")
+@rate_limited
 def outfit():
     """In: {"occasion": "...", "wardrobe": {...}?, "profile": {...}?}. Out: {"outfit": "..."}."""
     payload = request.get_json(silent=True) or {}
