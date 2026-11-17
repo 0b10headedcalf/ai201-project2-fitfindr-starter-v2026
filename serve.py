@@ -51,7 +51,6 @@ from pathlib import Path
 
 from flask import Flask, g, jsonify, request, send_from_directory
 from werkzeug.exceptions import HTTPException
-from werkzeug.middleware.proxy_fix import ProxyFix
 
 import db
 import generate
@@ -69,14 +68,16 @@ app = Flask(__name__)
 # logged() wrapper below turns into JSON and a log line.
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
-# Behind Render's proxy, remote_addr is the proxy, not the visitor. ProxyFix
-# takes the client IP from X-Forwarded-For, trusting exactly as many hops as
-# there are proxies in front of us. Trusting more than there are would let a
-# client pick its own IP by sending the header itself. Render sets RENDER=true;
-# locally there is no proxy, so nothing is trusted.
-_TRUSTED_PROXIES = int(os.getenv("AI201_TRUSTED_PROXIES", "1" if os.getenv("RENDER") else "0"))
-if _TRUSTED_PROXIES:
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=_TRUSTED_PROXIES)
+# Who is the client? On Render, remote_addr is one of several internal load
+# balancers (10.x), not the visitor — measured on the deploy: the limiter's
+# client tag matched the balancer, three of them, round-robin. X-Forwarded-For
+# isn't safe either: Render's proxy appends to whatever the caller sent, so
+# the caller controls the left of it. Cloudflare, in front of every Render
+# service, sets CF-Connecting-IP to the real client and overwrites any value
+# the caller sent. Locally the header is absent and remote_addr is right.
+# AI201_CLIENT_IP_HEADER="" turns this off for a host without Cloudflare,
+# where a caller could set the header themselves.
+_CLIENT_IP_HEADER = os.getenv("AI201_CLIENT_IP_HEADER", "CF-Connecting-IP")
 
 
 # ── structured log (capstone) ────────────────────────────────────────────────
@@ -256,6 +257,10 @@ _hits_lock = threading.Lock()
 
 
 def _client_ip() -> str:
+    if _CLIENT_IP_HEADER:
+        forwarded = (request.headers.get(_CLIENT_IP_HEADER) or "").strip()
+        if forwarded:
+            return forwarded
     return request.remote_addr or "unknown"
 
 

@@ -159,7 +159,7 @@ the point of the session.
 
 ### Hosted (Path A)
 
-- **URL:** `https://<your-service>.onrender.com` ← fill in after the first deploy
+- **URL:** <https://fitfindr-vr9s.onrender.com/> (deployed 2026-11-17 from the `capstone` branch)
 - **Platform:** Render, free web service (512 MB, sleeps after ~15 min idle)
 - **Config:** [`render.yaml`](render.yaml)
   - build: `pip install -r requirements.txt`
@@ -172,7 +172,7 @@ How it got there:
 3. When it asks, paste your key into `GEMINI_API_KEY`, and a Postgres connection string into `DATABASE_URL`. A free [Neon](https://neon.tech) database works: create a project, then copy the connection string from the dashboard. Both are secrets and never go in the repo. Tables are created on the first request.
 4. Wait for "Live", then open the URL. `GET /health` should say `ok`.
 
-The first request after a quiet period takes about a minute while the service wakes up. Latency numbers in the README say whether they are **warm** (the service already answered within the last few minutes) or **cold**.
+The first request after a quiet period waits while the service wakes up: measured at **21.3 s** for `/health` from cold on 2026-11-16, against **0.2 s** warm. Render's guide says it can take up to about a minute. Latency numbers in the README say whether they are **warm** (the service already answered within the last few minutes) or **cold**.
 
 ### Local (the same app, one command)
 
@@ -250,7 +250,7 @@ The timings were taken under the 0.1 CPU limit.
 
 **Per-user storage.** Send the browser's ID as an `X-User-Id: <uuid>` header; the page does this for you. With the header, a successful scan or profile analysis is **stored** (photo, thumbnail, items or profile). Without it, those routes stay stateless, which is how `capstone_eval.py` calls them. Each browser can store at most 60 photos (`AI201_MAX_PHOTOS`); past that, uploads return **409**. Photos that fail (422) are never stored.
 
-**Abuse limits.** The API key is the app's, and the routes are public, so the four routes that call the model (`/ask`, `/wardrobe/scan`, `/profile/analyze`, `/outfit`) are limited **per client IP**: 6 requests a minute and 60 an hour (`AI201_IP_LIMIT_PER_MINUTE`, `AI201_IP_LIMIT_PER_HOUR`; `0` per minute turns it off). Past that they return **429** with a `Retry-After` header. When several photos are uploaded at once, the page waits out a short limit and retries by itself. On Render the client IP comes from `X-Forwarded-For`, trusting one proxy hop (`AI201_TRUSTED_PROXIES`, which is 1 when Render's `RENDER` variable is set and 0 otherwise). Behind that, `generate.py` paces every caller together at 15 model calls a minute and stops after 300 calls per process (**503**, until the service restarts). Neither limit replaces the Google-side ones: use a key from a project **without billing**, or set a budget alert and a daily quota for the Generative Language API.
+**Abuse limits.** The API key is the app's, and the routes are public, so the four routes that call the model (`/ask`, `/wardrobe/scan`, `/profile/analyze`, `/outfit`) are limited **per client IP**: 6 requests a minute and 60 an hour (`AI201_IP_LIMIT_PER_MINUTE`, `AI201_IP_LIMIT_PER_HOUR`; `0` per minute turns it off). Past that they return **429** with a `Retry-After` header. When several photos are uploaded at once, the page waits out a short limit and retries by itself. On Render the client IP comes from Cloudflare's `CF-Connecting-IP` header, which Cloudflare overwrites on every request, so a caller can't fake it. `remote_addr` there is one of several Render load balancers, and `X-Forwarded-For` keeps whatever the caller put in it. Locally the header is absent and `remote_addr` is used. Set `AI201_CLIENT_IP_HEADER=` (empty) on a host without Cloudflare in front. Behind that, `generate.py` paces every caller together at 15 model calls a minute and stops after 300 calls per process (**503**, until the service restarts). Neither limit replaces the Google-side ones: use a key from a project **without billing**, or set a budget alert and a daily quota for the Generative Language API.
 
 Status codes:
 
