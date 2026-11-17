@@ -476,13 +476,25 @@ def outfit_for_occasion(wardrobe: dict, profile: dict | None, occasion: str) -> 
             f"style: {', '.join(item.get('style_tags', []))})"
             for item in wardrobe_items
         )
+        # Capstone fix (criterion 3): the old prompt ended "If the wardrobe is
+        # missing something the occasion really needs, say what" — an
+        # instruction to recommend an unowned item, which the model followed in
+        # nearly every trial. And nothing asked for **bold**, so whether the
+        # page could tell owned items apart was left to chance. Both rules are
+        # now explicit, with the exact-name-in-bold format shown.
         prompt = (
             f"Build one outfit for this occasion: {occasion}.\n"
-            "Use ONLY pieces from the wardrobe below and name each one exactly "
-            "as written. Say why the outfit suits the occasion"
+            "Rules:\n"
+            "1. Use ONLY pieces from the wardrobe below. Write each piece you use "
+            "as its exact name in bold, copied character for character, e.g. "
+            f"**{wardrobe_items[0]['name']}**. Refer to a piece only that way — "
+            "never by a shortened name or a description of it.\n"
+            "2. Use ** for nothing except those exact names.\n"
+            "3. Do not mention, suggest or recommend any clothing, shoes or "
+            "accessories that are not in the wardrobe — not even as a missing "
+            "piece or an alternative.\n"
+            "Say why the outfit suits the occasion"
             + (" and how its colors work with the user's coloring." if profile_text else ".")
-            + " If the wardrobe is missing something the occasion really needs, "
-            "say what in one sentence at the end."
-            f"{profile_text}\n\nWardrobe:\n{formatted}"
+            + f"{profile_text}\n\nWardrobe:\n{formatted}"
         )
     return generate(prompt, system=system)
