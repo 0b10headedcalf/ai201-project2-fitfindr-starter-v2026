@@ -788,3 +788,139 @@ How it was measured:
 | Server time per run | 8.5 s | 3.7 s | 42.2 s |
 
 The server time is skewed by one run: run 6 waited 36 s on the rate limiter. The **median is 4.9 s**, and that's the more honest "how long does it take" number. Output tokens vary the most, and they follow the item count: a scan that finds 13 items writes about three times as much as one that finds 3. Since output costs 8× more than input, **busy closet photos cost the most**. The image itself is a nearly fixed ~1,200 prompt tokens whatever its size (96 KB and 208 KB photos cost almost the same).
+
+**At a hundred people a day:** if each person runs the full flow once, that's 100 × $0.0027 = **$0.27 a day**, about **$8.10 a month** (× 30). It's also 100 × 3 = **300 model calls a day**. That's well inside the 15-calls-a-minute pacing, but it is exactly `SESSION_REQUEST_BUDGET` (300 per process). On a day with no idle gap for Render to restart the process, person 101 would get the 503 "used its model budget" message (see What's Still Broken).
+
+The after-fix evaluation logged 195 more successful model calls (in `.eval_state/`, not committed) as a cross-check. Per call: scan 1,240 + 364 tokens, profile 1,244 + 127, outfit 446 + 153. That's 2,930 + 644 per run = $0.0025, slightly lower than the $0.0027 above because the eval photos hold fewer items than a full rack, and output tokens follow item count. The fix itself added about 85 prompt tokens to each outfit call (446 against about 362 before), under $0.00003 a run.
+
+**Criteria and how they were tested**
+
+The five criteria are in [`criteria.md`](criteria.md). They were committed in `c31e729` (*add capstone criteria*), before the evaluator (`cd6685c`), the frozen photos and labels (`f34727d`) and any results (`383d0c8`, *capstone results before*).
+
+- **Scorer:** [`criteria_eval.py`](criteria_eval.py) implements each criterion as written. Each threshold in the code is quoted from `criteria.md`. Criteria 1–4 run in-process through `serve.app.test_client()`: the same routes, no network, cache off, and the per-IP abuse limiter off; `generate.py`'s 15/min model pacing stays on. Criterion 5 runs over HTTPS against <https://fitfindr-vr9s.onrender.com> with `AI201_CACHE=0` set on Render. The flows are spaced 40 s apart to stay under the 6/min per-IP limit, and the pauses aren't counted in the timings.
+- **Fixtures:** [`eval_photos/labels.json`](eval_photos/labels.json) has five clothes photos (3–6 labeled items each) and three daylight one-person photos. All are CC0 Unsplash images mirrored on Wikimedia Commons, with sources in the file. Each has a SHA-256 checked before every run. **The labels were written by Claude (the AI assistant) from viewing each photo, before any prediction on these photos existed.** They were not hand-labeled by me, which is a difference from what `criteria.md` assumes.
+- **Criterion 3's "additional item" check** is mechanical. After removing the `**exact-name**` spans, a garment word left in the text fails the trial, unless it's a word from the name of an item the outfit already named ("the sneakers" after **Chunky white sneakers** refers back to an owned item). Flagged sentences are listed in each results file, so a person can overturn a false flag.
+- **Three runs, nothing changed in between.** Every trial is a real model call: no two runs gave identical outputs (word counts differ in every row of the results files).
+
+**One measurement failure, re-run.** In the first three before-runs, criterion 4 came out 0/5 because of the test setup, not the app. `logs/` had been created as root by an earlier `docker compose` run, so the in-process app couldn't open its SQLite file (every storage call returned 503) and its log writes failed silently. Criteria 1–3 never touch storage or the log, so their numbers stand. The original files are kept ([`capstone_before_run1.md`](results/capstone_before_run1.md), §4). `criteria_eval.py` now writes to `.eval_state/` and checks the folder is writable before measuring anything. Criterion 4 was re-run three times ([`_c4` files](results/capstone_before_run1_c4.md)) before any change to the system.
+
+**Run Log — Before**
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Clothes photos → valid entries, P and R ≥ 80% | every photo ≥ 4/5 trials | 4/5 photos | 4/5 photos | 5/5 photos | **MISSED** |
+| 2. Same person photo → same (undertone, contrast) | every photo 5/5 valid and ≥ 4/5 same pair | 3/3 photos | 3/3 photos | 2/3 photos | **MISSED** |
+| 3. Outfits use only owned items, exact names in `**` | every occasion ≥ 4/5 trials | 0/5 occasions | 0/5 occasions | 0/5 occasions | **MISSED** |
+| 4. Invalid uploads → right status, nothing stored, no model call for bytes | every case 5/5 | 5/5 cases | 5/5 cases | 5/5 cases | **MET** |
+| 5. Warm deployed flow ≤ 30 s | ≥ 4/5 flows | 5/5 flows | 5/5 flows | 5/5 flows | **MET** |
+
+Files: [`results/capstone_before_run{1,2,3}.md`](results/capstone_before_run1.md) (criteria 1–3), [`_c4`](results/capstone_before_run1_c4.md) and [`_c5`](results/capstone_before_run1_c5.md). Every request and response is in the matching `.jsonl`.
+
+Real output, before run 1 unless stated. All of it comes from `criteria_eval.py`, which calls the named route in `serve.py`.
+
+*Criterion 1:* `clothes_03.jpg`, trial 1, through `serve.py::wardrobe_scan` → `tools.py::scan_wardrobe`. Four items are labeled; the bag isn't in the answer.
+```json
+{"photo": "clothes_03.jpg", "trial": 1, "status": 200, "seconds": 1.84}
+{"items": [{"id": "scan_001", "name": "Gold flat sandals with flower embellishments", "category": "shoes"}, {"id": "scan_002", "name": "Straw hat with dark brim and ribbon detail", "category": "accessories"}, {"id": "scan_003", "name": "Sunglasses with tinted lenses", "category": "accessories"}]}
+{"precision": 1.0, "recall": 0.75, "predicted": {"shoes": 1, "accessories": 2}, "reasons": ["recall 75% < 80%"]}
+```
+
+*Criterion 2:* `person_03.jpg`, before **run 3**, the five responses from `serve.py::profile_analyze` → `tools.py::analyze_profile`:
+```json
+{"undertone": "warm", "contrast": "medium", "hair_color": "dark brown"}
+{"undertone": "warm", "contrast": "medium", "hair_color": "dark brown"}
+{"undertone": "warm", "contrast": "high", "hair_color": "dark brown"}
+{"undertone": "warm", "contrast": "medium", "hair_color": "dark brown"}
+{"undertone": "warm", "contrast": "high", "hair_color": "dark brown"}
+```
+
+*Criterion 3:* *rainy day errands*, trial 1, from `serve.py::outfit` → `tools.py::outfit_for_occasion`. Scored `["recommends an item outside the ** ** spans"]`:
+```text
+Here is your rainy day outfit:
+
+Layer the **Oversized grey crewneck sweatshirt** over the **White ribbed tank top**, and pair them with the **Wide-leg khaki trousers** and **Black combat boots**. Complete the look with the **Black crossbody bag** and **Brown leather belt**.
+[…two paragraphs on why…]
+*Note: This outfit really needs a waterproof rain jacket to keep you dry in a downpour.*
+```
+
+*Criterion 4:* trial 1 of three cases, each with the log line `serve.py::logged` wrote and the `GET /me` that followed:
+```json
+{"case": "text file", "status": 400, "response": {"error": "That file isn't a JPEG, PNG, WebP or HEIC image."}, "log": {"route": "/wardrobe/scan", "status": 400, "duration_ms": 0, "model_calls": 0, "prompt_tokens": 0}, "me": {"status": 200, "photos": [], "items": [], "profile": null}}
+{"case": "9 MiB JPEG magic + zeros", "status": 413, "response": {"error": "The data value transmitted exceeds the capacity limit."}, "log": {"route": "/wardrobe/scan", "status": 413, "duration_ms": 4, "model_calls": 0, "prompt_tokens": 0}, "me": {"status": 200, "photos": [], "items": [], "profile": null}}
+{"case": "white PNG → profile", "status": 422, "response": {"error": "Expected exactly one person in the photo, found 0."}, "log": {"route": "/profile/analyze", "status": 422, "duration_ms": 984, "model_calls": 1, "prompt_tokens": 1244}, "me": {"status": 200, "photos": [], "items": [], "profile": null}}
+```
+
+*Criterion 5:* flow 2 against Render, timed on the client by `criteria_eval.py::criterion_5`:
+```json
+{"criterion": 5, "flow": 2, "health": [200, 0.23], "steps": [{"route": "/wardrobe/scan", "status": 200, "seconds": 2.33}, {"route": "/profile/analyze", "status": 200, "seconds": 1.6}, {"route": "/outfit", "status": 200, "seconds": 1.45}], "total_seconds": 5.39, "pass": true, "errors": []}
+```
+
+**Verdicts and Diagnoses**
+
+1. **MISSED: one photo, one item.** Every failing trial in all three runs is `clothes_03.jpg`, always 100% precision and 75% recall, and the missing item is always the **brown leather bag**. *Stage:* the vision call in `tools.py::scan_wardrobe`. *Mechanism:* the straw hat lies over the top third of the bag. The model reports the hat and then either treats the bag as part of the hat's setting or misses it entirely: it listed the bag in 8 of 15 trials. At `temperature=0.2` that's a coin flip each trial, not a fixed blind spot, which is why run 3 passed 4/5. It is the only photo in the set with two labeled items overlapping, and the other four photos passed 60 of 60 trials.
+2. **MISSED: one photo, one field.** `person_03.jpg` gave `warm/high` in 2 of 5 trials in run 3, so its most common pair reached only 3/5. Runs 1–2 were 5/5. The undertone never changed in 45 trials, and the other two photos never changed at all. *Stage:* the vision call in `tools.py::analyze_profile`. *Mechanism:* `contrast` is a judgment about the gap between hair, skin and eyes. `person_03` is the smallest figure in the set: seated, about a sixth of the frame tall, in hard sunlight that brightens the skin and darkens the hair. That puts this photo near the medium/high boundary, and sampling at 0.2 lets it fall either side.
+3. **MISSED, everywhere, for a reason in the prompt.** 70 of 75 trials failed. *Stage:* the prompt in `tools.py::outfit_for_occasion`. *Mechanism, two parts:* (a) the prompt ended with *"If the wardrobe is missing something the occasion really needs, say what in one sentence at the end"*. The model treated that as an instruction to always find something, and wrote a "Note: this wardrobe is missing a blazer / rain jacket / dress shoes" in nearly every trial, which is the unowned-item recommendation the criterion forbids. (b) Nothing asked for `**bold**`, so bolding exact names was left to the model's habits. 20 trials named owned items in plain text. The model was doing what it was asked; the prompt asked for the wrong thing.
+4. **MET** in all three runs (after the setup fix above). The three byte-level rejections never reached the model (`model_calls: 0`), and nothing was stored for any case.
+5. **MET** in all three runs. 14 of 15 flows took 4.8–5.6 s against a 30 s target. The slowest, 17.8 s, was the first flow of run 1: its scan took 15.3 s, which looks like the first request after a deploy waking the worker. Even that is inside the limit.
+
+**The pattern.** Criteria 1 and 2 are one problem with two symptoms: **a borderline photo, read by a sampling vision model.** Each miss is confined to the single fixture that sits near a decision boundary (an overlapped item, a small figure in hard light). The other photos are rock-steady, so lowering the target wouldn't be honest and a different prompt wouldn't obviously help. Criterion 3 is a different problem with a direct cause: the prompt asked for the failure. That's the one to fix, because the diagnosis names the exact sentence responsible.
+
+**The Improvement**
+
+One change, aimed at criterion 3's diagnosis: the outfit prompt in `tools.py::outfit_for_occasion` (commit `8cf6fef`). The sentence asking for a missing piece is gone, and three rules replace it:
+1. use only wardrobe pieces, each written as its **exact name in bold**, with an example taken from the wardrobe, and never refer to one by a shortened name;
+2. use `**` for nothing else;
+3. don't mention, suggest or recommend any clothing, shoes or accessories that aren't in the wardrobe, *"not even as a missing piece or an alternative."*
+
+Nothing else changed: same photos, labels, evaluator and model. Pushed, redeployed on Render, then the full set re-run three times.
+
+**Run Log — After**
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Clothes photos → valid entries, P and R ≥ 80% | every photo ≥ 4/5 trials | 4/5 photos | 4/5 photos | 5/5 photos | **MISSED** |
+| 2. Same person photo → same (undertone, contrast) | every photo 5/5 valid and ≥ 4/5 same pair | 3/3 photos | 3/3 photos | 2/3 photos | **MISSED** |
+| 3. Outfits use only owned items, exact names in `**` | every occasion ≥ 4/5 trials | 5/5 occasions | 5/5 occasions | 4/5 occasions | **MISSED** |
+| 4. Invalid uploads → right status, nothing stored, no model call for bytes | every case 5/5 | 5/5 cases | 5/5 cases | 5/5 cases | **MET** |
+| 5. Warm deployed flow ≤ 30 s | ≥ 4/5 flows | 5/5 flows | 5/5 flows | 5/5 flows | **MET** |
+
+Files: [`results/capstone_after_run{1,2,3}.md`](results/capstone_after_run1.md) and [`_c5`](results/capstone_after_run1_c5.md). Criterion 5's after-flows took 4.1–6.5 s, all 15 of them, against the deployed fix.
+
+| Criterion 3, trials passing (of 25 per run) | Run 1 | Run 2 | Run 3 |
+|---|---|---|---|
+| Before | 1 | 2 | 2 |
+| After | 25 | 24 | 22 |
+
+**Did it help?** Yes, for criterion 3: trials passing went from 5 of 75 to 71 of 75, and two of three runs now meet the target. But the verdict is still **MISSED**, because run 3's *rainy day errands* passed only 3/5. Two of its outputs mentioned an **umbrella**: *"sling the **Black crossbody bag** over your shoulder to keep your hands free for your umbrella."* That isn't a recommendation in the "you need" sense, but it is an unowned accessory, and rule 3 forbids mentioning one. Rain makes the model reach for an umbrella even when told not to. Two other flagged sentences across the after-runs ("the earthy khaki pants" for *Wide-leg khaki trousers*, "the white tank and shoes") are references back to owned items that the mechanical rule can't tell apart. A human check overturns both, and neither changes an occasion's verdict. Here's an after-fix *rainy day errands* that passes, run 1 trial 1:
+
+```text
+Pair the **Oversized grey crewneck sweatshirt** with the **Baggy straight-leg jeans, dark wash**. Step into the **Black combat boots** to keep your feet dry on wet sidewalks, and sling the **Black crossbody bag** across your shoulder to keep your hands totally free.
+```
+`items_used`: `["Baggy straight-leg jeans, dark wash", "Oversized grey crewneck sweatshirt", "Black combat boots", "Black crossbody bag"]`. Every owned item is bold and exact, and nothing unowned is mentioned.
+
+**The trade:** the outfits no longer tell the user what's missing. That was useful advice for a wedding with only sneakers, and the criterion, as I wrote it, counts it as a failure. Criteria 1, 2 and 4 didn't change, as expected: the fix doesn't touch scanning, profiles or upload checks.
+
+**What's Still Broken**
+
+- **Criterion 1 (overlapped items).** What I'd do: add one line to the scan prompt, *"items can overlap; list a partly hidden item separately"*, and run the scan twice, keeping the union of items, deduplicated by category and name. Why I stopped: Milestone 6 allows one improvement, and criterion 3's cause was the clearer one. A second call per scan would also double the cost of the most expensive request.
+- **Criterion 2 (borderline contrast).** What I'd do: drop `analyze_profile`'s temperature from 0.2 to 0. That's the direct lever on sampling, and the profile has no reason to vary. Or ask for a contrast score from 1 to 10 and bucket it in code, so a borderline photo lands the same way every time. Why I stopped: same one-fix limit. Neither would make the *answer* correct, only consistent, and the criterion only asks for consistency.
+- **Criterion 3 (the umbrella).** What I'd do: post-process instead of only prompting. After generation, check the text against the wardrobe names and re-ask once when an unowned garment word appears outside the bold spans, using the same check `criteria_eval.py` already runs. Why I stopped: out of time, and it adds a second model call to some outfits.
+- **Criteria 4 and 5 were met, and 5's target was set low.** All 30 warm flows, before and after, took under 18 s, and 29 of them under 7 s, against a 30 s target. I'd tighten it to **4 of 5 flows within 10 s**. That still leaves room for a slow upload on a phone, and it would catch a real slowdown, which 30 s never would.
+- **The 300-call budget isn't sized for real traffic.** At 100 people a day, 3 calls each uses up `SESSION_REQUEST_BUDGET` in one process lifetime. It's a guard against runaway loops, not a usage quota; a real deployment needs a daily cap that survives restarts.
+
+**What I'd Do Next**
+
+First, I'd label five photos of my own clothes and re-run criterion 1 on them. Every number here rests on eight stock photos that Claude labeled, and an app for scanning your own wardrobe hasn't been tested on one yet. That's the measurement most likely to change what I think works.
+
+**How I Used AI (Capstone)**
+
+I used Claude (Claude Code, in the terminal) through the whole capstone. Here's where it did the work, where I did, and what I checked:
+
+- **Built with Claude, reviewed by me:** the photo routes and validation (`tools.py`, `serve.py`), the demo page, the structured log, the deploy setup, `measure_cost.py` and `criteria_eval.py`. I set direction, ran the deploy on Render (account, env vars, `AI201_CACHE`), and copied Render's logs back when Claude couldn't see them.
+- **Mine:** `criteria.md`, the five criteria, their targets and reasons. I wrote and committed them before the evaluator, the fixtures or any results existed. Claude implemented the scorer from my wording and flagged where the wording needed a mechanical rule (criterion 3's back-references) before the first run.
+- **Claude's, and the README says so:** picking the eight CC0 test photos and **writing their labels**, done before any prediction on them existed and frozen with SHA-256 hashes. That's a real limit on criterion 1: the ground truth is an AI's reading of the photos, not mine.
+- **Where it was wrong, and how that got caught:**
+  - The first rate limiter used `ProxyFix` / `X-Forwarded-For` and passed every local test. It took Render's log, the `client` hashes matching Render's internal load balancers, to show it was counting proxies, not visitors. Claude made three wrong guesses before reading the evidence (IPv6, front-end IPs, HTTP version).
+  - Its first evaluator run of criterion 4 scored 0/5 because `logs/` was root-owned. Claude flagged that as a measurement failure rather than reporting it as a miss, and kept the bad files.
+  - Its first draft of these sections had wrong totals (out of 225 trials instead of 75, plus three other counts); they were recomputed from the raw `.jsonl` before commit.
+- **What I'd do differently:** label the photos myself. And ask for the evidence (logs, raw responses) first, before accepting an explanation for a failure.
