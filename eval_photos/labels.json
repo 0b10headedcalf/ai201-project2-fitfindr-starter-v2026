@@ -1,0 +1,159 @@
+{
+  "_about": "Frozen fixtures for criteria.md. Photos are CC0 (Unsplash uploads mirrored on Wikimedia Commons), 1280px renditions. Labels were written by Claude (AI assistant) from viewing each photo, before any model prediction on these photos existed; the user did not hand-label them.",
+  "wardrobe": [
+    {
+      "file": "clothes_01.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Clothing_flatlay_(Unsplash).jpg",
+      "license": "CC0",
+      "items": [
+        {
+          "category": "tops",
+          "note": "light grey crewneck sweater, folded"
+        },
+        {
+          "category": "bottoms",
+          "note": "grey check trousers, folded"
+        },
+        {
+          "category": "shoes",
+          "note": "brown leather lace-up boots (pair = 1)"
+        },
+        {
+          "category": "accessories",
+          "note": "brown leather belt"
+        },
+        {
+          "category": "accessories",
+          "note": "black sunglasses (the tan case under them is not counted separately)"
+        },
+        {
+          "category": "accessories",
+          "note": "watch with brown leather strap"
+        }
+      ],
+      "sha256": "0ece4a6931a11b732a0ae928e28993b11fe9092c47d66689fd5a402b5fc55ac5"
+    },
+    {
+      "file": "clothes_02.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Outfit_(Unsplash).jpg",
+      "license": "CC0",
+      "items": [
+        {
+          "category": "tops",
+          "note": "black-and-white striped top with pockets"
+        },
+        {
+          "category": "bottoms",
+          "note": "dark green skirt on a hanger"
+        },
+        {
+          "category": "shoes",
+          "note": "white/peach/black sneakers (pair = 1)"
+        }
+      ],
+      "not_counted": "notebook",
+      "sha256": "4e47515ef82483a97adbb45ec4a196f689b0c2fad1da1f10aa7a7025f2d75f49"
+    },
+    {
+      "file": "clothes_03.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Beach_Vacation_Packing_(Unsplash).jpg",
+      "license": "CC0",
+      "items": [
+        {
+          "category": "shoes",
+          "note": "gold flower sandals (pair = 1)"
+        },
+        {
+          "category": "accessories",
+          "note": "straw hat"
+        },
+        {
+          "category": "accessories",
+          "note": "brown leather bag"
+        },
+        {
+          "category": "accessories",
+          "note": "mirrored sunglasses"
+        }
+      ],
+      "not_counted": "camera, phone, tablet case, water bottle, cards",
+      "sha256": "68345b46879cc60fa328e99f46dbf93d98f75d76055f5f9b244a56eb50038b70"
+    },
+    {
+      "file": "clothes_04.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Fashionable_woman_in_a_skirt_(Unsplash).jpg",
+      "license": "CC0",
+      "items": [
+        {
+          "category": "tops",
+          "note": "grey knit sweater"
+        },
+        {
+          "category": "bottoms",
+          "note": "pink satin skirt with lace hem"
+        },
+        {
+          "category": "outerwear",
+          "note": "pale pink wool coat"
+        },
+        {
+          "category": "shoes",
+          "note": "grey suede over-the-knee boots (pair = 1)"
+        },
+        {
+          "category": "accessories",
+          "note": "pink handbag"
+        }
+      ],
+      "sha256": "0fc0079e5d82139b3bffe36f79a97d59c5205c3da140a675eab43cfd663698e1"
+    },
+    {
+      "file": "clothes_05.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Chevrons_and_Boots_(Unsplash).jpg",
+      "license": "CC0",
+      "items": [
+        {
+          "category": "tops",
+          "note": "tan-and-white chevron sweater"
+        },
+        {
+          "category": "bottoms",
+          "note": "light grey shorts"
+        },
+        {
+          "category": "shoes",
+          "note": "tan suede over-the-knee boots (pair = 1)"
+        },
+        {
+          "category": "accessories",
+          "note": "thin bracelets on the wrist, counted once"
+        }
+      ],
+      "sha256": "cf6259599596aa8dbf5ddecd8de562e0e52ad753a7afc4ba4548216982f1b356"
+    }
+  ],
+  "profile": [
+    {
+      "file": "person_01.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Dressed_In_Red_(Unsplash).jpg",
+      "license": "CC0",
+      "note": "one person, full body, daylight, white wall",
+      "sha256": "f59acf2c4817a540622a916dad878b52ed361dca2394948babf907af9e26ec7f"
+    },
+    {
+      "file": "person_02.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Country_Chic_Outfit_(Unsplash).jpg",
+      "license": "CC0",
+      "note": "one person, full body, daylight, field",
+      "sha256": "e8957044ce6e59113a8313a4858868e06237950d1af204d4a1b93f83d4963384"
+    },
+    {
+      "file": "person_03.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Fashion_(Unsplash).jpg",
+      "license": "CC0",
+      "note": "one person, seated full body, daylight",
+      "sha256": "41ab7d69cba07ef389cabeca75f6eacaccd01cf62ef3f427fe393856ec70c061"
+    }
+  ],
+  "frozen_at": "2026-11-17T05:37:28+00:00"
+}
