@@ -524,8 +524,14 @@ def main() -> None:
 
     local = only & {1, 2, 3, 4}
     if local:
-        logs = ROOT / "logs"
+        # Its own folder, not logs/: a Docker run can leave logs/ owned by root,
+        # and then the app can't open its SQLite file (every storage call 503s)
+        # and its log writes fail silently. That happened on the first before-run.
+        logs = ROOT / ".eval_state"
         logs.mkdir(exist_ok=True)
+        probe = logs / ".write_test"
+        probe.write_text("ok")  # fail loudly here rather than measure a broken setup
+        probe.unlink()
         t = InProcess(logs / f"{stem}.log.jsonl", logs / f"{stem}.db")
         for k, fn in ((1, lambda: criterion_1(t, labels, raw)), (2, lambda: criterion_2(t, labels, raw)),
                       (3, lambda: criterion_3(t, raw)), (4, lambda: criterion_4(t, raw))):

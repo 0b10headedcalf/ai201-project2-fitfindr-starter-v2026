@@ -28,3 +28,6 @@ logs/
 
 # Local SQLite fallback for db.py (Postgres is used when DATABASE_URL is set)
 data/fitfindr.db
+
+# criteria_eval.py scratch database and request log
+.eval_state/
