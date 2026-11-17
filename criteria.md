@@ -1,140 +1,149 @@
-# Acceptance criteria — FitFindr
+# Capstone acceptance criteria — FitFindr photo input
 
-Five criteria that say what "working" means for this agent, written in unit 3
-**before** any results existed.
+These five criteria cover the extension: photos become wardrobe entries and a
+color profile, which feed occasion-based outfits. Earlier units' criteria are
+preserved verbatim in [criteria-unit3.md](criteria-unit3.md).
 
-An acceptance criterion names a target: a number, a count, a rate, or something
-a person could plainly observe. *"The agent handles errors"* is an opinion.
-*"When search returns nothing, the agent stops before calling the second tool,
-in 5 of 5 tries"* is a criterion.
+**Order of work:** No system runs or evaluation results were generated while
+writing this file. Earlier unit results already exist in `results/`, and the
+README contains capstone deployment and cost measurements. These criteria
+precede the next capstone acceptance evaluation, not all historical measurements.
+Commit this file before that evaluation, then commit its first results separately
+with a message naming capstone results.
 
-Under each one, write a sentence or two on **why that target** and not a
-stricter one. A reason that says something about your tools, your loop, or the
-data earns credit; *"80% seemed reasonable"* does not.
+**Evaluation setup:** Before any new model calls, freeze the photos and manual
+labels in `eval_photos/labels.json`, recording a SHA-256 for each image. Use five
+clothes photos, each showing 3–10 distinct, unobscured items, and three daylight
+photos each containing exactly one person. Label each visible garment, shoe
+pair, or accessory once using `tops`, `bottoms`, `outerwear`, `shoes`, or
+`accessories`; a pair of shoes counts as one item. Do not replace photos or
+labels after seeing predictions. Disable the model cache (`AI201_CACHE=0`).
+Record model, configuration, raw responses, and request durations. Run five
+sequential trials per case. Pace requests below configured rate limits;
+unexpected rejections still count as failures. Missing fixtures or responses
+mean incomplete evidence, never a pass.
 
-> Missing your own targets next unit costs you nothing. Setting a target so
-> easy you can't miss it does.
+## 1. Clothes photos produce usable wardrobe entries (extension)
 
-**Two are written for you. You write three.**
+For each of the five clothes photos posted to `/wardrobe/scan`, at least 4 of
+5 trials must return HTTP 200, category precision and recall both at least
+80%, and a nonempty `items` array whose entries each have a unique nonempty
+string `id`, a nonempty string `name`, an allowed category, and `colors` and
+`style_tags` arrays containing only strings. For each category, match at most
+the smaller of its labeled and predicted item counts; precision is total
+matches / total predictions, and recall is total matches / total labels.
+Zero predictions fail. Every photo must meet the 4-of-5 target separately.
 
----
+**Why this target:** Invalid fields can break the downstream outfit tool, so
+every entry must satisfy the schema in a passing response. Precision penalizes
+extra items and recall penalizes omissions. An 80% threshold allows limited
+vision mistakes a user can edit in a crowded photo; a lower threshold leaves
+too much manual correction. Four successes allow one stochastic lapse, whereas
+five would require perfect repetition. This measures category counts, not
+item identity or color accuracy.
 
-## 1. A matching query completes all three tools
+## 2. A repeated person photo gives a stable color profile (extension)
 
-Given a query that matches at least one listing, the agent completes all three
-tool calls and returns a fit card — in at least 4 of 5 tries.
+For each of the three one-person photos posted to `/profile/analyze`, all
+5 trials must return HTTP 200 with `undertone` in `warm`, `cool`, `neutral`
+and `contrast` in `low`, `medium`, `high`. For each photo separately, the
+same `(undertone, contrast)` pair must occur in at least 4 of its 5 responses.
 
-**Why this target:**
-<!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
-     "my search is a plain keyword match and some phrasings will miss" is a
-     real answer. -->
+**Why this target:** Both fields guide clothing colors, so changes on repeat
+uploads can produce conflicting advice. Four identical pairs allow one outlier;
+three would allow nearly half the answers to disagree. Unanimity is stricter
+than needed for an editable profile. Valid enums in every response are an
+interface requirement. Consistency does not establish that a person's coloring
+was analyzed correctly; this criterion makes no color-accuracy claim.
 
-If the model fails at any stage or runs into any issues such as rate limits or is unable to reach an endpoint, then the whole chain gets kinda messed up, so having a margin of error seems reasonable.
+## 3. Occasion outfits use the supplied wardrobe (extension)
 
----
+Post to `/outfit` with `example_wardrobe` from `data/wardrobe_schema.json`,
+`outfit_profile` from `eval_photos/labels.example.json`, and each of these
+occasions: `job interview at a design studio`, `outdoor summer wedding`,
+`rainy day errands`, `first date at a jazz bar`, and `casual Friday at the office`.
+For each occasion, at least 4 of 5 trials must return HTTP 200 and a nonempty
+`outfit` string of at most 170 whitespace-separated words naming at least two
+distinct wardrobe items by their exact case-sensitive names. `items_used` must
+equal the set of those names present in the text, with no duplicates. Every
+recommended garment, shoe, or accessory must appear as an exact wardrobe name
+enclosed in `**`; any other bold span or additional garment, shoe, or accessory
+recommendation outside those spans fails the trial. Styling actions such as
+tucking or rolling sleeves do not count as additional items.
 
-## 2. An impossible query stops before the second tool
+**Why this target:** Invented pieces make an owned-clothes outfit unusable
+without shopping. Exact names make ownership and the response's item list
+checkable, and two items require a combination. The existing prompt asks for
+fewer than 170 words; this ceiling keeps the result readable on the demo page.
+Four successes per occasion allow one prose-generation lapse without letting
+an easy occasion hide repeated failures on another. Requiring all 25 responses
+to pass would allow no variation in generated prose.
 
-Given a query that matches no listings, the agent stops before calling
-`suggest_outfit` and returns a message naming what to change — 5 of 5 tries.
+## 4. Invalid uploads return errors without storing data (extension, bad path)
 
-**Why this target:**
-<!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
-     about this path? -->
+Repeat each of these cases 5 times with a fresh valid `X-User-Id` UUID per
+request. Every case must meet its expected status in 5 of 5 trials and return
+JSON with a nonempty string `error`: multipart uploads (field `image`) to
+`/wardrobe/scan` of an empty file (400), the bytes `definitely not an image`
+named `text-file.txt` (400), a 9 MiB file consisting of JPEG magic bytes
+`FF D8 FF` followed by zero bytes (413), and a valid solid-white 64×64 PNG
+(422); upload that same PNG to `/profile/analyze` (422). After each request,
+`GET /me` with that UUID must return HTTP 200 with empty `photos` and
+`wardrobe.items` arrays and a null `profile`. The first three cases must also
+log `model_calls: 0` for the rejected request.
 
-This is primarily for application security and can be much more consistent programmatically than the prior target.
+**Why this target:** Bad uploads must not become saved wardrobe entries or
+profiles, and obviously invalid bytes must not consume paid model calls.
+Five of five is required because accepting even one violates that boundary;
+a lower rate would excuse persistent bad data. Blank images require vision
+to identify their content, so zero model calls applies only to the three
+cases rejectable before inference. No requirement stricter than complete
+rejection is needed for these cases.
 
----
+## 5. The warm deployed photo flow completes within 30 seconds (extension)
 
-## 3. Something about state
+On the deployed service, first receive HTTP 200 from `/health`, then run
+five sequential flows, each starting within 60 seconds of a successful health
+check. Each flow posts the first frozen clothes photo to `/wardrobe/scan`,
+posts the first frozen person photo to `/profile/analyze`, then passes those
+responses as `wardrobe` and `profile` to `/outfit` with occasion
+`casual Friday at the office`. At least 4 of 5 flows must return HTTP 200 for
+all three requests with their summed client-observed durations at most
+30 seconds. Measure each request from immediately before sending until the
+entire response body is received; include upload, network, server queueing,
+and retry time, but exclude deliberate pauses between requests. An error,
+timeout, or missing response fails the flow. Disable the cache on the deployed
+server as well as the evaluator.
 
-<!-- YOU WRITE THIS ONE.
+**Why this target:** A user waits through three model calls before seeing an
+outfit. Thirty seconds bounds the complete interaction on the small hosted
+service, including network overhead; a much shorter limit leaves little room
+for uploads and inference, while a longer one makes the demo difficult to use.
+Four successes permit one transient delay but require most attempts to finish
+within the bound. Cold starts are excluded explicitly because waking the free
+host is a different wait from generating an outfit on an awake service.
 
-     How would you know that the item your search found is the same item the
-     next tool received? Name something countable or observable.
+## Criteria self-check — document review before execution
 
-     This is the criterion people find hardest, because state failure doesn't
-     look like state failure — it looks like a tool problem. Something that
-     compares session["selected_item"] against what actually reached
-     suggest_outfit is the shape you're after. -->
+Review prompt: For each criterion, how exactly would you test it using only
+the sentence itself, would two people score it the same way, and what would
+have to happen for it to fail? Do not rewrite it.
 
-Could have a simple state machine running in the background that has a parameter that detects a 'close enough' match to the right item, ideally as a sort of trie to keep it as programmtically fast as possible. The state target we should shoot for is at least a 85% match of characters.
+This is a self-review of the written criteria, not a Claude review or a record
+of system test outcomes.
 
-**Why this target:**
-I think this is probably as programmatically consistent as an idea as I can come up with right now, and should ensure runs stay consistent. We should try to meet 4/5 of these as per the percentage target.
+| Criterion | How to test from the text | Would two people agree? | What makes it fail? |
+|---|---|---|---|
+| 1 | Upload each labeled photo five times; validate fields and compute the defined category-count precision and recall. | Yes, using frozen labels and the explicit formulas and per-photo aggregation. | Any photo has fewer than four trials satisfying status, both 80% thresholds, and every schema check. |
+| 2 | Analyze each person photo five times; validate enums and count identical field pairs per photo. | Yes; compare literal pairs without judging color accuracy. | Any invalid enum or non-200, or any photo with no pair occurring at least four times. |
+| 3 | Send the fixed wardrobe/profile for the five named occasions five times each; count words, exact names, bold spans, and compare name sets. | The counts are mechanical; reviewers must also inspect prose for additional recommended pieces using the stated garment/action distinction. | Any occasion has fewer than four trials meeting every condition, including no extra recommended piece. |
+| 4 | Send each specified upload five times under fresh IDs; inspect status, error, matching log entry, and `/me` state. | Yes; statuses, bytes, call counts, and empty state are explicit. | Any wrong status, empty error, saved object, failed state check, or forbidden model call. |
+| 5 | Warm the deployed host; use a monotonic client clock to time the five specified three-request flows and sum durations. | Yes; warm conditions, cache state, timing boundaries, and error treatment are explicit. | Fewer than four flows return three HTTP 200 responses within 30 seconds. |
 
-
----
-
-## 4. Something about the fit card
-
-<!-- YOU WRITE THIS ONE.
-
-     The fit card calls a model, so the same input can produce different words
-     each time. That's not a bug — it's the nature of the tool. So what would
-     make it acceptable?
-
-     Think about what you'd actually be unhappy to see. A caption that never
-     mentions the price? Two different items producing the same opening
-     sentence? A card longer than a caption anyone would post? Any of those can
-     be turned into a number. -->
-
-
-I think we should try to adhere to a system prompt for the fit card, but the system prompt should be very strict on including price in the caption as well as simple descriptors. Further description can be left up to the model and be a bit more stochastic. The fit card should at the minimum always have the price and the general vibe of the outfit in the caption. 5/5 tries
-
-**Why this target:**
-I think that this target is probably a bit easier to meet due to the ability to call the model for the task of generating text, and can be easily verified/checked.
-
-
----
-
-## 5. Your choice
-
-<!-- YOU WRITE THIS ONE TOO.
-
-     Pick something you actually care about getting right. Speed, the empty
-     wardrobe path, what happens when the model can't be reached, whether the
-     search respects a price ceiling — anything, as long as it names a number
-     or an observable outcome. -->
-
-I really care about matching the user's budget constraints; fashion should not be limited to those who can pay for the best tools for it.
-
-
-**Why this target:**
-More of a metaphysical reason but I think that the reason I listed above and making sure user needs are taken into account will probably make for the best user experience
-and also insure the agent is running properly when working with numeric values.
-
-
----
-
-<!-- ─────────────────────────────────────────────────────────────────────────
-     UNIT 4 — read this before you change anything above.
-
-     If a criterion turns out to be BROKEN rather than merely unmet, you can
-     revise it, and that earns credit. But never delete or edit the original
-     line. Add the revision underneath it, like this:
-
-         ## 4. Something about the fit card
-
-         The fit card is different every time.
-
-         **Why this target:** ...
-
-         > **Revised in unit 4:** For 5 different items, the 5 fit cards share
-         > no opening sentence.
-         >
-         > **Why revised:** "different" wasn't checkable — two cards that
-         > differed by one word still counted. The new version is something I
-         > can actually score.
-
-     That's a revision because the criterion couldn't be MEASURED.
-
-     Lowering a target because you missed it is not a revision, and it costs
-     you the point:
-
-         ✗ "I said the empty search stops it 5 of 5 times, but I got 3 of 5,
-            so 3 of 5 is more realistic."
-
-     A number you missed stays where it is, gets diagnosed, and gets a fix
-     attempted. That's where the points are.
-     ───────────────────────────────────────────────────────────────────────── -->
+The self-check identifies limits: category counts cannot prove item identity;
+stable profiles cannot prove color accuracy; outfit prose needs a human check
+as well as exact-name matching. The existing `capstone_eval.py` does not enforce
+all these criteria: its default is three trials, its outfit-name heuristic is
+looser, and its latency summary is per request. The next evaluation must use
+five trials and score raw responses against this file rather than treating
+those summaries as automatic acceptance verdicts.
